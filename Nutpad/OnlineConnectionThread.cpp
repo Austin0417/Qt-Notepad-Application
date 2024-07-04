@@ -1,5 +1,12 @@
 #include "OnlineConnectionThread.h"
 
+OnlineConnectionThread::OnlineConnectionThread() :
+	connection_type_(ConnectionType::HOST),
+	managed_connection_(nullptr)
+{
+
+}
+
 
 void OnlineConnectionThread::StartOnlineConnection(std::unique_ptr<Connection> connection, ConnectionType connection_type)
 {
@@ -7,6 +14,7 @@ void OnlineConnectionThread::StartOnlineConnection(std::unique_ptr<Connection> c
 	managed_connection_ = std::move(connection);
 	online_thread_ = std::thread([this]()
 		{
+			managed_connection_->Start();
 			managed_connection_->RunIOContext();
 		});
 }

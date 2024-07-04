@@ -7,6 +7,7 @@
 #include <QMenuBar>
 #include "FileOperationThread.h"
 #include <QFileDialog>
+#include <QToolButton>
 #include <QKeyEvent>
 #include <unordered_set>
 #include <stack>
@@ -16,6 +17,7 @@
 #include "Server.h"
 #include "Client.h"
 #include "OnlineConnectionThread.h"
+#include "OnlineStatusToolButton.h"
 
 
 class Nutpad : public QMainWindow
@@ -45,6 +47,7 @@ private:
 	std::unique_ptr<QMenuBar> notepad_menu_bar_;
 	std::unique_ptr<QFileDialog> file_dialog_;
 	std::vector<QMenu*> notepad_menus_;
+	std::unique_ptr<OnlineStatusToolButton> online_status_tool_button_;
 
 	// Thread handling file write operations
 	FileOperationThread file_operation_thread_;
@@ -74,6 +77,7 @@ public:
 
 signals:
 	void OnCompletedFileRead(const std::string& name_of_file_read, const std::string& input_text);
+	void OnClientReceivedTextFromServer(char* host_text);
 
 private:
 	void BindActionsToMenus();

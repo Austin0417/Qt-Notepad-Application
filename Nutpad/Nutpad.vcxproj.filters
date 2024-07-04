@@ -82,13 +82,19 @@
     <ClCompile Include="Client.cpp">
       <Filter>Source Files\network</Filter>
     </ClCompile>
-    <ClCompile Include="Server.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Connection.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\network</Filter>
     </ClCompile>
     <ClCompile Include="OnlineConnectionThread.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="Server.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="ClientHandleMessageQueue.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="OnlineStatusToolButton.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -111,17 +117,23 @@
     <ClInclude Include="Client.h">
       <Filter>Header Files\network</Filter>
     </ClInclude>
-    <ClInclude Include="Server.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ServerToClientHeaders.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Connection.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\network</Filter>
     </ClInclude>
     <ClInclude Include="OnlineConnectionThread.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="ServerToClientHeaders.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="Server.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientHandleMessageQueue.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientToServerHeaders.h">
+      <Filter>Header Files\network</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -138,6 +150,9 @@
     </QtMoc>
     <QtMoc Include="ConnectionParametersDialog.h">
       <Filter>Header Files\dialogs</Filter>
+    </QtMoc>
+    <QtMoc Include="OnlineStatusToolButton.h">
+      <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
 </Project>

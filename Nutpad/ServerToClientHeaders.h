@@ -3,6 +3,6 @@
 
 enum class ServerToClientHeaders
 {
-	SEND_ID,
+	SEND_ID = 1,
 	SEND_TEXT
 };

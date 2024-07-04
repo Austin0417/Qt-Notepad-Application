@@ -17,6 +17,7 @@ private:
 	ConnectionType connection_type_;
 	std::unique_ptr<Connection> managed_connection_;
 public:
+	OnlineConnectionThread();
 	void StartOnlineConnection(std::unique_ptr<Connection> connection, ConnectionType connection_type);
 	ConnectionType GetConnectionType() const;
 	std::unique_ptr<Connection>& GetManagedConnection();

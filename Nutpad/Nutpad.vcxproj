@@ -106,11 +106,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Client.cpp" />
+    <ClCompile Include="ClientHandleMessageQueue.cpp" />
     <ClCompile Include="Connection.cpp" />
     <ClCompile Include="ConnectionParametersDialog.cpp" />
     <ClCompile Include="IOContextSingleton.cpp" />
     <ClCompile Include="NutpadTextEdit.cpp" />
     <ClCompile Include="OnlineConnectionThread.cpp" />
+    <ClCompile Include="OnlineStatusToolButton.cpp" />
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="UndoTrackerThread.cpp" />
     <QtRcc Include="Nutpad.qrc" />
@@ -126,6 +128,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client.h" />
+    <ClInclude Include="ClientHandleMessageQueue.h" />
+    <ClInclude Include="ClientToServerHeaders.h" />
     <ClInclude Include="Connection.h" />
     <ClInclude Include="EditOperation.h" />
     <ClInclude Include="FileOperationThread.h" />
@@ -133,6 +137,7 @@
     <ClInclude Include="InputFilenameDialog.h" />
     <ClInclude Include="IOContextSingleton.h" />
     <ClInclude Include="OnlineConnectionThread.h" />
+    <QtMoc Include="OnlineStatusToolButton.h" />
     <ClInclude Include="Server.h" />
     <ClInclude Include="ServerToClientHeaders.h" />
     <ClInclude Include="UndoTrackerThread.h" />

@@ -19,7 +19,7 @@ Nutpad::Nutpad(QWidget* parent) :
 
 
 	notepad_menu_bar_ = std::make_unique<QMenuBar>(this);
-	notepad_menu_bar_->setFixedWidth(this->width());
+	notepad_menu_bar_->setFixedWidth(this->width() / 2);
 
 	notepad_text_ = std::make_unique<NutpadTextEdit>(this);
 	notepad_text_->setFixedWidth(this->width());
@@ -38,6 +38,29 @@ Nutpad::Nutpad(QWidget* parent) :
 
 	file_dialog_ = std::make_unique<QFileDialog>(this);
 	file_dialog_->setFileMode(QFileDialog::Directory);
+
+	online_status_tool_button_ = std::make_unique<OnlineStatusToolButton>([this]()
+		{
+			QString result;
+			if (online_connection_thread_.GetManagedConnection() == nullptr)
+			{
+				result = "Online Status: You are currently offline";
+			}
+			else if (online_connection_thread_.GetConnectionType() == ConnectionType::CLIENT)
+			{
+				result = "Online Status: You are currently a client connected to IP=" + QString::fromStdString(online_connection_thread_.GetManagedConnection()->GetIPAddress());
+
+			}
+			else
+			{
+				result = "Online Status: You are currently hosting a notepad on port " + QString::number(online_connection_thread_.GetManagedConnection()->GetPortNumber());
+			}
+			return result;
+		},
+		this);
+	online_status_tool_button_->setIcon(QIcon("server_host_icon.jpg"));
+	online_status_tool_button_->move(this->width() / 2, online_status_tool_button_->y());
+	online_status_tool_button_->setFixedWidth(this->width() / 2);
 
 	connect(file_dialog_.get(), &QFileDialog::fileSelected, this, [this](const QString& directory)
 		{
@@ -120,6 +143,12 @@ Nutpad::Nutpad(QWidget* parent) :
 			undo_tracker_thread_.SetTimeOfLastEdit(std::chrono::high_resolution_clock::now());
 
 			qDebug() << "Added character=" << added;
+		});
+
+	connect(this, &Nutpad::OnClientReceivedTextFromServer, this, [this](char* host_text)
+		{
+			notepad_text_->setText(QString{ host_text });
+			delete[] host_text;
 		});
 
 	BindActionsToMenus();
@@ -226,10 +255,16 @@ void Nutpad::BindActionsToMenus()
 			ConnectionParametersDialog* dialog = new ConnectionParametersDialog([this](const QString& server_ip, short port)
 				{
 					qDebug() << "Starting server with ip=" << server_ip << " on port=" << port;
-					online_connection_thread_.StartOnlineConnection(std::make_unique<Server>(server_ip.toStdString(), port), ConnectionType::HOST);
+					std::unique_ptr<Server> server = std::make_unique<Server>(server_ip.toStdString(), port);
+					server->SetCurrentHostTextCallback([this]()
+						{
+							return notepad_text_->toPlainText();
+						});
+					online_connection_thread_.StartOnlineConnection(std::move(server), ConnectionType::HOST);
 
 				},
 				this);
+
 			dialog->setWindowTitle("Host a Notepad");
 			dialog->show();
 		});
@@ -239,7 +274,12 @@ void Nutpad::BindActionsToMenus()
 			ConnectionParametersDialog* dialog = new ConnectionParametersDialog([this](const QString& server_ip, short port)
 				{
 					qDebug() << "Attempting connection to server with ip=" << server_ip << " on port=" << port;
-					online_connection_thread_.StartOnlineConnection(std::make_unique<Client>(server_ip.toStdString(), port), ConnectionType::CLIENT);
+					std::unique_ptr<Client> client = std::make_unique<Client>(server_ip.toStdString(), port);
+					client->SetOnHostTextReceived([this](char* content_buffer)
+						{
+							emit this->OnClientReceivedTextFromServer(content_buffer);
+						});
+					online_connection_thread_.StartOnlineConnection(std::move(client), ConnectionType::CLIENT);
 
 				},
 				this);
@@ -336,7 +376,6 @@ void Nutpad::Undo()
 		QString first_half = text.sliced(0, last_operation.GetIndexOfEdit());
 		QString second_half = text.sliced(last_operation.GetIndexOfEdit() + last_operation.GetEditContent().length() + 1);
 
-		//QString result_text = text.sliced(0, last_operation.GetIndexOfEdit()) + text.sliced(last_operation.GetIndexOfEdit() + last_operation.GetEditContent().length());
 		notepad_text_->setText(first_half + second_half);
 	}
 	else
