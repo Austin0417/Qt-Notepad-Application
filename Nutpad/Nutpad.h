@@ -9,7 +9,9 @@
 #include <QFileDialog>
 #include <QToolButton>
 #include <QKeyEvent>
+#include <QSyntaxHighlighter>
 #include <unordered_set>
+#include <unordered_map>
 #include <stack>
 #include "NutpadTextEdit.h"
 #include "EditOperation.h"
@@ -18,6 +20,7 @@
 #include "Client.h"
 #include "OnlineConnectionThread.h"
 #include "OnlineStatusToolButton.h"
+#include "TextIndexerThread.h"
 
 
 class Nutpad : public QMainWindow
@@ -64,10 +67,10 @@ private:
 	UndoTrackerThread undo_tracker_thread_;
 
 	// Server and client
-	//std::unique_ptr<Server> server_;
-	//std::unique_ptr<Client> client_;
-
 	OnlineConnectionThread online_connection_thread_;
+
+	// Text Indexer thread for fast word search/find operations
+	TextIndexerThread text_indexer_thread_;
 
 public:
 	Nutpad(QWidget* parent = nullptr);
@@ -78,6 +81,10 @@ public:
 signals:
 	void OnCompletedFileRead(const std::string& name_of_file_read, const std::string& input_text);
 	void OnClientReceivedTextFromServer(char* host_text);
+	void OnClientCursorPositionChanged(const ClientCursorPositionData& cursor_data);
+	void OnOnlineConnectionStartSuccess(QAction* host, QAction* join, QAction* terminate);
+	void OnClientCharacterRemoved(const ClientRemovedCharacterData& removed_char_data);
+	void OnClientTextSelectionReceived(const ClientSelectionData& selection_data);
 
 private:
 	void BindActionsToMenus();

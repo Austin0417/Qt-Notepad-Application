@@ -39,6 +39,12 @@
     <Filter Include="Source Files\network">
       <UniqueIdentifier>{1247091f-db51-45df-ac0b-c190c33b2100}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\derived">
+      <UniqueIdentifier>{205678c6-414c-45da-864c-5037d61b41fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\derived">
+      <UniqueIdentifier>{554ed2e0-8858-41d5-96bd-6dbf9dea3b80}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="Nutpad.qrc">
@@ -67,9 +73,6 @@
     <ClCompile Include="EditOperation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NutpadTextEdit.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ConnectionParametersDialog.cpp">
       <Filter>Source Files\dialogs</Filter>
     </ClCompile>
@@ -94,7 +97,40 @@
     <ClCompile Include="ClientHandleMessageQueue.cpp">
       <Filter>Source Files\network</Filter>
     </ClCompile>
+    <ClCompile Include="ClientConnectionInfoDialog.cpp">
+      <Filter>Source Files\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectionInfoDialog.cpp">
+      <Filter>Source Files\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="HostConnectionInfoDialog.cpp">
+      <Filter>Source Files\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="NutpadTextEdit.cpp">
+      <Filter>Source Files\derived</Filter>
+    </ClCompile>
     <ClCompile Include="OnlineStatusToolButton.cpp">
+      <Filter>Source Files\derived</Filter>
+    </ClCompile>
+    <ClCompile Include="TextIndexerThread.cpp">
+      <Filter>Source Files\helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="ClientPacketParser.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="MessageBox.cpp">
+      <Filter>Source Files\helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="MouseIndexTracker.cpp">
+      <Filter>Source Files\helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="NutpadTextHighlighter.cpp">
+      <Filter>Source Files\derived</Filter>
+    </ClCompile>
+    <ClCompile Include="ServerPacketParser.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="ClientColorTracker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -135,6 +171,39 @@
     <ClInclude Include="ClientToServerHeaders.h">
       <Filter>Header Files\network</Filter>
     </ClInclude>
+    <ClInclude Include="ClientConnectionInfoDialog.h">
+      <Filter>Header Files\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="ConnectionInfoDialog.h">
+      <Filter>Header Files\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="HostConnectionInfoDialog.h">
+      <Filter>Header Files\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="TextIndexerThread.h">
+      <Filter>Header Files\helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientPacketParser.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="MessageBox.h">
+      <Filter>Header Files\helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="NetworkStructures.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="NutpadTextHighlighter.h">
+      <Filter>Header Files\derived</Filter>
+    </ClInclude>
+    <ClInclude Include="ServerPacketParser.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="MouseIndexTracker.h">
+      <Filter>Header Files\helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientColorTracker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="InputFilenameDialog.ui">
@@ -143,16 +212,22 @@
     <QtUic Include="ConnectionParametersDialog.ui">
       <Filter>Form Files</Filter>
     </QtUic>
+    <QtUic Include="HostConnectionInfoDialog.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="ClientConnectionInfoDialog.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="NutpadTextEdit.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
     <QtMoc Include="ConnectionParametersDialog.h">
       <Filter>Header Files\dialogs</Filter>
     </QtMoc>
+    <QtMoc Include="NutpadTextEdit.h">
+      <Filter>Header Files\derived</Filter>
+    </QtMoc>
     <QtMoc Include="OnlineStatusToolButton.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\derived</Filter>
     </QtMoc>
   </ItemGroup>
 </Project>

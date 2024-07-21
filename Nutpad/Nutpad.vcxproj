@@ -106,17 +106,29 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Client.cpp" />
+    <ClCompile Include="ClientColorTracker.cpp" />
+    <ClCompile Include="ClientConnectionInfoDialog.cpp" />
     <ClCompile Include="ClientHandleMessageQueue.cpp" />
+    <ClCompile Include="ClientPacketParser.cpp" />
     <ClCompile Include="Connection.cpp" />
+    <ClCompile Include="ConnectionInfoDialog.cpp" />
     <ClCompile Include="ConnectionParametersDialog.cpp" />
+    <ClCompile Include="HostConnectionInfoDialog.cpp" />
     <ClCompile Include="IOContextSingleton.cpp" />
+    <ClCompile Include="MessageBox.cpp" />
+    <ClCompile Include="MouseIndexTracker.cpp" />
     <ClCompile Include="NutpadTextEdit.cpp" />
+    <ClCompile Include="NutpadTextHighlighter.cpp" />
     <ClCompile Include="OnlineConnectionThread.cpp" />
     <ClCompile Include="OnlineStatusToolButton.cpp" />
     <ClCompile Include="Server.cpp" />
+    <ClCompile Include="ServerPacketParser.cpp" />
+    <ClCompile Include="TextIndexerThread.cpp" />
     <ClCompile Include="UndoTrackerThread.cpp" />
     <QtRcc Include="Nutpad.qrc" />
+    <QtUic Include="ClientConnectionInfoDialog.ui" />
     <QtUic Include="ConnectionParametersDialog.ui" />
+    <QtUic Include="HostConnectionInfoDialog.ui" />
     <QtUic Include="InputFilenameDialog.ui" />
     <QtUic Include="Nutpad.ui" />
     <QtMoc Include="Nutpad.h" />
@@ -128,18 +140,29 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client.h" />
+    <ClInclude Include="ClientColorTracker.h" />
+    <ClInclude Include="ClientConnectionInfoDialog.h" />
     <ClInclude Include="ClientHandleMessageQueue.h" />
+    <ClInclude Include="ClientPacketParser.h" />
     <ClInclude Include="ClientToServerHeaders.h" />
     <ClInclude Include="Connection.h" />
+    <ClInclude Include="ConnectionInfoDialog.h" />
     <ClInclude Include="EditOperation.h" />
     <ClInclude Include="FileOperationThread.h" />
     <QtMoc Include="ConnectionParametersDialog.h" />
+    <ClInclude Include="HostConnectionInfoDialog.h" />
     <ClInclude Include="InputFilenameDialog.h" />
     <ClInclude Include="IOContextSingleton.h" />
+    <ClInclude Include="MessageBox.h" />
+    <ClInclude Include="MouseIndexTracker.h" />
+    <ClInclude Include="NetworkStructures.h" />
+    <ClInclude Include="NutpadTextHighlighter.h" />
     <ClInclude Include="OnlineConnectionThread.h" />
     <QtMoc Include="OnlineStatusToolButton.h" />
     <ClInclude Include="Server.h" />
+    <ClInclude Include="ServerPacketParser.h" />
     <ClInclude Include="ServerToClientHeaders.h" />
+    <ClInclude Include="TextIndexerThread.h" />
     <ClInclude Include="UndoTrackerThread.h" />
     <QtMoc Include="NutpadTextEdit.h" />
   </ItemGroup>

@@ -7,7 +7,8 @@
 enum class ConnectionType
 {
 	HOST,
-	CLIENT
+	CLIENT,
+	OFFLINE
 };
 
 class OnlineConnectionThread
@@ -19,8 +20,10 @@ private:
 public:
 	OnlineConnectionThread();
 	void StartOnlineConnection(std::unique_ptr<Connection> connection, ConnectionType connection_type);
+	void ClearConnection();
 	ConnectionType GetConnectionType() const;
 	std::unique_ptr<Connection>& GetManagedConnection();
+	const std::unique_ptr<Connection>& GetManagedConnection() const;
 	~OnlineConnectionThread();
 };
 

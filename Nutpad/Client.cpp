@@ -1,5 +1,7 @@
 #include "Client.h"
 
+#include "Server.h"
+
 static char* ParseTextData(std::istream& is)
 {
 	// Allocate a character buffer with initial size
@@ -52,6 +54,7 @@ void Client::Start()
 		{
 			if (!ec)
 			{
+				on_client_connect_success_();
 				std::cout << "CLIENT: successfully connected to server\n";
 				Read();
 			}
@@ -92,6 +95,31 @@ void Client::Read()
 					on_received_text_from_host_(contents_buffer);
 					break;
 				}
+				case static_cast<int>(ServerToClientHeaders::SERVER_END):
+				{
+					is_terminating_ = true;
+					break;
+				}
+				case static_cast<int>(ServerToClientHeaders::SEND_CLIENT_CURSOR_POS):
+				{
+					ClientCursorPositionData cursor_data = GetCursorPositionDataFromStream(is);
+					std::cout << "CLIENT: received cursor data of client id=" << cursor_data.client_id_ << " with index=" << cursor_data.cursor_position_index_ << "\n";
+					on_client_cursor_position_changed_(cursor_data);
+					break;
+				}
+				case static_cast<int>(ServerToClientHeaders::SEND_SELECTION_DATA):
+				{
+					ClientSelectionData selection_data = GetClientSelectionDataFromStream(is);
+					on_selection_data_(selection_data);
+					break;
+				}
+				case static_cast<int>(ServerToClientHeaders::SERVER_REMOVE_CHAR):
+				{
+					ClientRemovedCharacterData removed_char_data = GetCharRemovedDataFromStream(is);
+					on_client_character_removed_(removed_char_data);
+					std::cout << "CLIENT: received character removed at index=" << removed_char_data.char_index_to_remove_ << " from client with id=" << removed_char_data.client_id_ << "\n";
+					break;
+				}
 				}
 
 				read_buffer_.consume(length);
@@ -109,6 +137,44 @@ Client& Client::SetOnHostTextReceived(const std::function<void(char*)>& callback
 	return *this;
 }
 
+Client& Client::SetOnClientConnectSuccess(const std::function<void()>& callback)
+{
+	on_client_connect_success_ = callback;
+	return *this;
+}
+
+Client& Client::SetOnClientCharacterRemoved(const std::function<void(ClientRemovedCharacterData)>& callback)
+{
+	on_client_character_removed_ = callback;
+	return *this;
+}
+
+Client& Client::SetSelectionDataCallback(const std::function<void(ClientSelectionData)>& callback)
+{
+	on_selection_data_ = callback;
+	return *this;
+}
+
+
+Client& Client::SetOnClientCursorPositionChanged(const std::function<void(ClientCursorPositionData)>& callback)
+{
+	on_client_cursor_position_changed_ = callback;
+	return *this;
+}
+
+
+void Client::Terminate()
+{
+	std::thread([this]()
+		{
+			// TODO Client should send a message to the server, with a client terminate flag along with their id so that server-side can also terminate the socket to this client
+			WriteSynchronous(ClientToServerHeaders::CLIENT_END, client_id_);
+			std::cout << "CLIENT: closing client socket with id=" << client_id_ << "\n";
+			socket_.close();
+			IOContextSingleton::GetClientIOContext().stop();
+		}).detach();
+
+}
 
 void Client::RunIOContext()
 {

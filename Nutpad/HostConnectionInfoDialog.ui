@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>HostConnectionInfoDialog</class>
+ <widget class="QDialog" name="HostConnectionInfoDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>30</y>
+     <width>331</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">font-size: 23px; font-weight: bold;</string>
+   </property>
+   <property name="text">
+    <string>Current Connection Role: Host</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="ip_label">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>110</y>
+     <width>331</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">font-size: 20px; font-weight: bold;</string>
+   </property>
+   <property name="text">
+    <string>IP:</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="port_label">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>160</y>
+     <width>331</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">font-size: 23px; font-weight: bold;</string>
+   </property>
+   <property name="text">
+    <string>Port:</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="ok_btn">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>260</y>
+     <width>75</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>OK</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

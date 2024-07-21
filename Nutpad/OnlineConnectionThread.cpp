@@ -1,7 +1,7 @@
 #include "OnlineConnectionThread.h"
 
 OnlineConnectionThread::OnlineConnectionThread() :
-	connection_type_(ConnectionType::HOST),
+	connection_type_(ConnectionType::OFFLINE),
 	managed_connection_(nullptr)
 {
 
@@ -19,6 +19,13 @@ void OnlineConnectionThread::StartOnlineConnection(std::unique_ptr<Connection> c
 		});
 }
 
+void OnlineConnectionThread::ClearConnection()
+{
+	managed_connection_ = nullptr;
+	connection_type_ = ConnectionType::OFFLINE;
+}
+
+
 
 ConnectionType OnlineConnectionThread::GetConnectionType() const
 {
@@ -26,6 +33,11 @@ ConnectionType OnlineConnectionThread::GetConnectionType() const
 }
 
 std::unique_ptr<Connection>& OnlineConnectionThread::GetManagedConnection()
+{
+	return managed_connection_;
+}
+
+const std::unique_ptr<Connection>& OnlineConnectionThread::GetManagedConnection() const
 {
 	return managed_connection_;
 }
