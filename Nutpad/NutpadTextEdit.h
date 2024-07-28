@@ -2,6 +2,7 @@
 #include "MouseIndexTracker.h"
 #include "ClientColorTracker.h"
 #include "NutpadTextHighlighter.h"
+#include "ClientTextData.h"
 #include <QTextEdit>
 #include <QMouseEvent>
 #include <QKeyEvent>
@@ -53,6 +54,7 @@ private:
 
 	MouseIndexTracker mit_;
 	ClientColorTracker client_color_tracker_;
+	std::unordered_map<int, ClientTextData> client_data_mapping_;
 
 	std::unordered_set<int> multi_key_presses_;
 	std::function<void()> on_undo_requested_;

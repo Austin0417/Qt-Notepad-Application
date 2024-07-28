@@ -31,6 +31,16 @@ static char* ParseTextData(std::istream& is)
 }
 
 
+static ServerToClientHeaders GetMessageType(std::istream& is)
+{
+	char message_type;
+	is.read(&message_type, sizeof(char));
+
+	int int_message_type = std::atoi(&message_type);
+
+	return static_cast<ServerToClientHeaders>(int_message_type);
+}
+
 Client::Client(const std::string& ip, short port) :
 	socket_(IOContextSingleton::GetClientIOContext()),
 	resolver_(IOContextSingleton::GetClientIOContext()),
@@ -74,13 +84,16 @@ void Client::Read()
 				std::istream is(&read_buffer_);
 
 				// Determine the type of message sent by the server
+
+				/*
 				char message_type;
 				is.read(&message_type, sizeof(char));
 
 				int message_type_int = std::atoi(&message_type);
-				switch (message_type_int)
+				*/
+				switch (GetMessageType(is))
 				{
-				case static_cast<int>(ServerToClientHeaders::SEND_ID):
+				case ServerToClientHeaders::SEND_ID:
 				{
 					char client_id_char;
 					is.read(&client_id_char, sizeof(char));
@@ -88,36 +101,42 @@ void Client::Read()
 					std::cout << "CLIENT: successfully assigned id=" << client_id_ << "\n";
 					break;
 				}
-				case static_cast<int>(ServerToClientHeaders::SEND_TEXT):
+				case ServerToClientHeaders::SEND_TEXT:
 				{
 					char* contents_buffer = ParseTextData(is);
 					std::cout << "CLIENT: received text content from server\n" << contents_buffer;
 					on_received_text_from_host_(contents_buffer);
 					break;
 				}
-				case static_cast<int>(ServerToClientHeaders::SERVER_END):
+				case ServerToClientHeaders::SERVER_END:
 				{
 					is_terminating_ = true;
 					break;
 				}
-				case static_cast<int>(ServerToClientHeaders::SEND_CLIENT_CURSOR_POS):
+				case ServerToClientHeaders::SEND_CLIENT_CURSOR_POS:
 				{
 					ClientCursorPositionData cursor_data = GetCursorPositionDataFromStream(is);
 					std::cout << "CLIENT: received cursor data of client id=" << cursor_data.client_id_ << " with index=" << cursor_data.cursor_position_index_ << "\n";
 					on_client_cursor_position_changed_(cursor_data);
 					break;
 				}
-				case static_cast<int>(ServerToClientHeaders::SEND_SELECTION_DATA):
+				case ServerToClientHeaders::SEND_SELECTION_DATA:
 				{
 					ClientSelectionData selection_data = GetClientSelectionDataFromStream(is);
 					on_selection_data_(selection_data);
 					break;
 				}
-				case static_cast<int>(ServerToClientHeaders::SERVER_REMOVE_CHAR):
+				case ServerToClientHeaders::SERVER_REMOVE_CHAR:
 				{
 					ClientRemovedCharacterData removed_char_data = GetCharRemovedDataFromStream(is);
 					on_client_character_removed_(removed_char_data);
 					std::cout << "CLIENT: received character removed at index=" << removed_char_data.char_index_to_remove_ << " from client with id=" << removed_char_data.client_id_ << "\n";
+					break;
+				}
+				case ServerToClientHeaders::SERVER_REMOVE_SELECTION:
+				{
+					ClientRemovedSelectionData removed_selection_data = GetClientRemovedSelectionDataFromStream(is);
+					on_client_removed_selection_(removed_selection_data);
 					break;
 				}
 				}
@@ -161,6 +180,13 @@ Client& Client::SetOnClientCursorPositionChanged(const std::function<void(Client
 	on_client_cursor_position_changed_ = callback;
 	return *this;
 }
+
+Client& Client::SetOnClientRemovedSelection(const std::function<void(ClientRemovedSelectionData)>& callback)
+{
+	on_client_removed_selection_ = callback;
+	return *this;
+}
+
 
 
 void Client::Terminate()

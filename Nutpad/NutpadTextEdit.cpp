@@ -34,31 +34,10 @@ NutpadTextEdit::NutpadTextEdit(QWidget* parent) :
 			}
 		})
 {
-	/*
-	connect(this, &QTextEdit::textChanged, this, [this]()
+	text_highlighter_ = new NutpadTextHighlighter(this, [this]()
 		{
-			if (is_backspace_currently_held_ && current_index_of_mouse_cursor_ > 0)
-			{
-				emit OnCharacterRemoved(potential_char_to_remove_);
-				current_index_of_mouse_cursor_--;
-				if (current_index_of_mouse_cursor_ == 0)
-				{
-					potential_char_to_remove_ = '\0';
-					return;
-				}
-				potential_char_to_remove_ = toPlainText()[current_index_of_mouse_cursor_ - 1];
-			}
-			else
-			{
-				while (!latest_added_characters_.empty())
-				{
-					emit OnCharacterAdded(latest_added_characters_.front());
-					latest_added_characters_.pop();
-				}
-			}
+			return std::ref(client_data_mapping_);
 		});
-		*/
-	text_highlighter_ = new NutpadTextHighlighter(this);
 	connect(this, &NutpadTextEdit::OnHoverOverClientCursor, this, [this](const QPoint& pos, int client_id)
 		{
 			QToolTip::showText(this->mapToGlobal(pos), "Client " + QString::number(client_id), nullptr, QRect{}, 2000);
@@ -187,26 +166,16 @@ void NutpadTextEdit::paintEvent(QPaintEvent* event)
 
 	QPainter painter(viewport());
 
-	// TODO Add logic to make sure the color isn't already taken by another client
-	// TODO Add the randomly generated color into the ClientColorTracker obj, associate the client id with the random color
-
-	/*
-	QColor random_color = GetRandomColor();
-	QPen pen(QBrush(random_color), 1);
-	painter.setPen(pen);
-	*/
 	QPen pen;
 	pen.setWidth(1);
 
-	for (const auto& entry : mit_.GetIdToMouseIndexMapping())
+	for (const auto& entry : client_data_mapping_)
 	{
-		// mit_.GetIdToMouseIndexMapping() returns a const std::unordered_map<int, int>& where the key is the client id, and the value is the client's cursor position in the text editor
 		QTextCursor text_cursor(textCursor());
-		text_cursor.setPosition(entry.second);
+		text_cursor.setPosition(entry.second.GetCurrentMouseIndex());
 		QRect cursor_rect = cursorRect(text_cursor);
 
-		mit_.SetIdToCursorRect(entry.first, cursor_rect);
-		pen.setColor(client_color_tracker_.GetClientColor(entry.first).value());
+		pen.setColor(entry.second.GetColor());
 		painter.setPen(pen);
 
 		painter.drawLine(cursor_rect.topLeft(), cursor_rect.bottomLeft());
@@ -216,26 +185,33 @@ void NutpadTextEdit::paintEvent(QPaintEvent* event)
 
 void NutpadTextEdit::UpdateClientCursorIndex(int client_id, int cursor_pos)
 {
-	if (!mit_.UpdateIdToIndex(client_id, cursor_pos))
+	if (client_data_mapping_.find(client_id) == client_data_mapping_.end())
 	{
-		mit_.AddNewClient(client_id);
-	}
+		ClientTextData client_data(client_id);
 
-	// If the client has not been assigned a color yet, do it here
-	if (!client_color_tracker_.GetClientColor(client_id).isValid())
-	{
-		client_color_tracker_.SetClientColor(client_id, GetRandomColor());
+		// Assigning a color to the new client
+		client_data.SetColor(GetRandomColor());
+
+		client_data_mapping_[client_id] = client_data;
 	}
+	client_data_mapping_[client_id].SetCurrentMouseIndex(cursor_pos);
+
+	// Removing the client's previous text selection highlight (if they were highlighting text)
+	client_data_mapping_[client_id].ClearTextSelection();
+	text_highlighter_->rehighlight();
 
 	repaint();
 }
 
 void NutpadTextEdit::ApplyClientHighlight(int client_id, int start, int end)
 {
-	text_highlighter_->SetActiveColor(client_color_tracker_.GetClientColor(client_id));
-	text_highlighter_->SetStart(start);
-	text_highlighter_->SetEnd(end);
+	if (client_data_mapping_.find(client_id) == client_data_mapping_.end())
+	{
+		ClientTextData client_data(client_id);
+		client_data.SetColor(GetRandomColor());
+	}
 
+	client_data_mapping_[client_id].SetTextSelection(start, end);
 	text_highlighter_->rehighlight();
 }
 

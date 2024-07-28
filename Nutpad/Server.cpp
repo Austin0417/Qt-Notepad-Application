@@ -1,6 +1,12 @@
 #include "Server.h"
 
+static ClientToServerHeaders GetMessageType(std::istream& is)
+{
+	char message_type;
+	is.read(&message_type, sizeof(char));
 
+	return static_cast<ClientToServerHeaders>(std::atoi(&message_type));
+}
 
 void ServerToClientHandle::Read()
 {
@@ -9,13 +15,16 @@ void ServerToClientHandle::Read()
 			if (!ec)
 			{
 				std::istream is(&read_buffer_);
+
+				/*
 				char message_header;
 				is.read(&message_header, sizeof(char));
 
 				int message_header_int = std::atoi(&message_header);
-				switch (message_header_int)
+				*/
+				switch (GetMessageType(is))
 				{
-				case static_cast<int>(ClientToServerHeaders::CLIENT_ACKNOWLEDGEMENT):
+				case ClientToServerHeaders::CLIENT_ACKNOWLEDGEMENT:
 				{
 					std::cout << "SERVER: received acknowledgement from client\n";
 
@@ -35,7 +44,7 @@ void ServerToClientHandle::Read()
 
 					break;
 				}
-				case static_cast<int>(ClientToServerHeaders::CLIENT_SEND_CURSOR_POS):
+				case ClientToServerHeaders::CLIENT_SEND_CURSOR_POS:
 				{
 					// Cursor position packet structure:
 					// Next two characters will hold the client id value
@@ -46,7 +55,7 @@ void ServerToClientHandle::Read()
 					on_client_cursor_changed_(cursor_data);
 					break;
 				}
-				case static_cast<int>(ClientToServerHeaders::CLIENT_END):
+				case ClientToServerHeaders::CLIENT_END:
 				{
 					char client_id_char_buffer[ClientTerminationData::NUM_DIGITS_CLIENT_ID + 1];
 					is.read(client_id_char_buffer, ClientTerminationData::NUM_DIGITS_CLIENT_ID);
@@ -60,15 +69,21 @@ void ServerToClientHandle::Read()
 					on_client_terminated_(client_id_);
 					return;
 				}
-				case static_cast<int>(ClientToServerHeaders::CLIENT_REMOVE_CHAR):
+				case ClientToServerHeaders::CLIENT_REMOVE_CHAR:
 				{
 					on_client_character_removed_(GetCharRemovedDataFromStream(is));
 					break;
 				}
-				case static_cast<int>(ClientToServerHeaders::CLIENT_SELECTION_DATA):
+				case ClientToServerHeaders::CLIENT_SELECTION_DATA:
 				{
 					ClientSelectionData selection_data = GetClientSelectionDataFromStream(is);
 					on_selection_(selection_data);
+					break;
+				}
+				case ClientToServerHeaders::CLIENT_REMOVE_SELECTION:
+				{
+					ClientRemovedSelectionData removed_selection_data = GetClientRemovedSelectionDataFromStream(is);
+					on_removed_selection_(removed_selection_data);
 					break;
 				}
 				}
@@ -110,6 +125,12 @@ ServerToClientHandle& ServerToClientHandle::SetOnClientCharacterRemovedCallback(
 ServerToClientHandle& ServerToClientHandle::SetClientSelectionDataCallback(const std::function<void(ClientSelectionData)>& callback)
 {
 	on_selection_ = callback;
+	return *this;
+}
+
+ServerToClientHandle& ServerToClientHandle::SetOnClientRemovedSelectionDataCallback(const std::function<void(ClientRemovedSelectionData)>& callback)
+{
+	on_removed_selection_ = callback;
 	return *this;
 }
 
@@ -164,6 +185,12 @@ Server& Server::SetOnClientSelectionCallback(const std::function<void(ClientSele
 Server& Server::SetOnClientCharacterRemoved(const std::function<void(ClientRemovedCharacterData)>& callback)
 {
 	on_client_character_removed_ = callback;
+	return *this;
+}
+
+Server& Server::SetOnClientSelectionRemoved(const std::function<void(ClientRemovedSelectionData)>& callback)
+{
+	on_client_selection_removed_ = callback;
 	return *this;
 }
 
@@ -226,21 +253,32 @@ void Server::Start()
 											client->Write(ServerToClientHeaders::SEND_SELECTION_DATA, selection_data);
 										}
 									}
-								});
-							clients_.push_back(std::move(client));
-							on_client_join_(next_client_id_);
+								})
+								.SetOnClientRemovedSelectionDataCallback([this](ClientRemovedSelectionData removed_selection)
+									{
+										on_client_selection_removed_(removed_selection);
+										for (auto& client : clients_)
+										{
+											if (client->GetClientId() != removed_selection.client_id_)
+											{
+												client->Write(ServerToClientHeaders::SERVER_REMOVE_SELECTION, removed_selection, true);
+											}
+										}
+									});
+								clients_.push_back(std::move(client));
+								on_client_join_(next_client_id_);
 
-							// Send the client's assigned id to the client
-							clients_.back()->Write(ServerToClientHeaders::SEND_ID, next_client_id_, true);
-							next_client_id_++;
+								// Send the client's assigned id to the client
+								clients_.back()->Write(ServerToClientHeaders::SEND_ID, next_client_id_, true);
+								next_client_id_++;
 
-							// TODO Needs acknowledgement from the client that it has successfully processed the previous message before the server sends the next message
-							// TODO IDEA: store messages from the server in a queue, and after receiving an acknoledgement from the client, pop a message from the queue and send it
-							// Send the current text of the server/host's notepad to the client
+								// TODO Needs acknowledgement from the client that it has successfully processed the previous message before the server sends the next message
+								// TODO IDEA: store messages from the server in a queue, and after receiving an acknoledgement from the client, pop a message from the queue and send it
+								// Send the current text of the server/host's notepad to the client
 
-							clients_.back()->Write(ServerToClientHeaders::SEND_TEXT, get_host_current_text_().toStdString());
+								clients_.back()->Write(ServerToClientHeaders::SEND_TEXT, get_host_current_text_().toStdString());
 
-							Start();
+								Start();
 			}
 			else
 			{

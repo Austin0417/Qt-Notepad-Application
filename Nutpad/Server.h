@@ -49,6 +49,7 @@ private:
 	std::function<void(ClientCursorPositionData)> on_client_cursor_changed_;
 	std::function<void(ClientRemovedCharacterData)> on_client_character_removed_;
 	std::function<void(ClientSelectionData)> on_selection_;
+	std::function<void(ClientRemovedSelectionData)> on_removed_selection_;
 public:
 	ServerToClientHandle(Server* parent, int client_id, tcp::socket& socket) : socket_(std::move(socket)), client_id_(client_id), parent_server_(parent)
 	{
@@ -93,6 +94,7 @@ public:
 	ServerToClientHandle& SetOnClientCursorChangedCallback(const std::function<void(ClientCursorPositionData)>& callback);
 	ServerToClientHandle& SetOnClientCharacterRemovedCallback(const std::function<void(ClientRemovedCharacterData)>& callback);
 	ServerToClientHandle& SetClientSelectionDataCallback(const std::function<void(ClientSelectionData)>& callback);
+	ServerToClientHandle& SetOnClientRemovedSelectionDataCallback(const std::function<void(ClientRemovedSelectionData)>& callback);
 };
 
 
@@ -110,6 +112,7 @@ private:
 	std::function<void(const ClientCursorPositionData&)> on_client_cursor_position_changed_;
 	std::function<void(ClientSelectionData)> on_client_selection_;
 	std::function<void(ClientRemovedCharacterData)> on_client_character_removed_;
+	std::function<void(ClientRemovedSelectionData)> on_client_selection_removed_;
 	int num_clients_acknowledged_termination_;
 	std::condition_variable cv_;
 	std::mutex mutex_;
@@ -123,14 +126,18 @@ public:
 	Server& SetOnClientCursorPositionChanged(const std::function<void(const ClientCursorPositionData&)>& callback);
 	Server& SetOnClientSelectionCallback(const std::function<void(ClientSelectionData)>& callback);
 	Server& SetOnClientCharacterRemoved(const std::function<void(ClientRemovedCharacterData)>& callback);
+	Server& SetOnClientSelectionRemoved(const std::function<void(ClientRemovedSelectionData)>& callback);
 	void Start() override;
 
 	template<typename T>
-	void WriteAllClients(ServerToClientHeaders header, const T& data)
+	void WriteAllClients(ServerToClientHeaders header, const T& data, int exclude_client_id = -1)
 	{
 		for (auto& client : clients_)
 		{
-			client->Write(header, data, true);
+			if (client->GetClientId() != exclude_client_id)
+			{
+				client->Write(header, data, true);
+			}
 		}
 	}
 

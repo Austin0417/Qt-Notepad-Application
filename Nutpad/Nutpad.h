@@ -85,6 +85,7 @@ signals:
 	void OnOnlineConnectionStartSuccess(QAction* host, QAction* join, QAction* terminate);
 	void OnClientCharacterRemoved(const ClientRemovedCharacterData& removed_char_data);
 	void OnClientTextSelectionReceived(const ClientSelectionData& selection_data);
+	void OnTextSelectionRemoved(const ClientRemovedSelectionData& removed_selection);
 
 private:
 	void BindActionsToMenus();

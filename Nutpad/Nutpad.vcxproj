@@ -110,6 +110,7 @@
     <ClCompile Include="ClientConnectionInfoDialog.cpp" />
     <ClCompile Include="ClientHandleMessageQueue.cpp" />
     <ClCompile Include="ClientPacketParser.cpp" />
+    <ClCompile Include="ClientTextData.cpp" />
     <ClCompile Include="Connection.cpp" />
     <ClCompile Include="ConnectionInfoDialog.cpp" />
     <ClCompile Include="ConnectionParametersDialog.cpp" />
@@ -144,6 +145,7 @@
     <ClInclude Include="ClientConnectionInfoDialog.h" />
     <ClInclude Include="ClientHandleMessageQueue.h" />
     <ClInclude Include="ClientPacketParser.h" />
+    <ClInclude Include="ClientTextData.h" />
     <ClInclude Include="ClientToServerHeaders.h" />
     <ClInclude Include="Connection.h" />
     <ClInclude Include="ConnectionInfoDialog.h" />

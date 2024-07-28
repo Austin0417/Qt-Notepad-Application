@@ -133,6 +133,9 @@
     <ClCompile Include="ClientColorTracker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ClientTextData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileOperationThread.h">
@@ -202,6 +205,9 @@
       <Filter>Header Files\helpers</Filter>
     </ClInclude>
     <ClInclude Include="ClientColorTracker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientTextData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

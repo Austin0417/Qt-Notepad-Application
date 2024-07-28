@@ -167,13 +167,13 @@ Nutpad::Nutpad(QWidget* parent) :
 			case ConnectionType::HOST:
 			{
 				Server* server = dynamic_cast<Server*>(online_connection_thread_.GetManagedConnection().get());
-				server->WriteAllClients(ServerToClientHeaders::SEND_SELECTION_DATA, ClientSelectionData{ -1, start, end });
+				server->WriteAllClients(ServerToClientHeaders::SEND_SELECTION_DATA, ClientRemovedSelectionData{ -1, start, end });
 				break;
 			}
 			case ConnectionType::CLIENT:
 			{
 				Client* client = dynamic_cast<Client*>(online_connection_thread_.GetManagedConnection().get());
-				client->Write(ClientToServerHeaders::CLIENT_SELECTION_DATA, ClientSelectionData{ client->ClientId(), start, end });
+				client->Write(ClientToServerHeaders::CLIENT_SELECTION_DATA, ClientRemovedSelectionData{ client->ClientId(), start, end });
 				break;
 			}
 			default:
@@ -240,6 +240,26 @@ Nutpad::Nutpad(QWidget* parent) :
 			int right = (left == start) ? end : start;
 
 			std::cout << "Removed selection with start=" << left << " and end=" << right << "\n";
+
+			switch (online_connection_thread_.GetConnectionType())
+			{
+			case ConnectionType::HOST:
+			{
+				// We are the host, send the removed text selection data to the rest of our clients
+				std::unique_ptr<Connection>& connection = online_connection_thread_.GetManagedConnection();
+				Server* server = dynamic_cast<Server*>(connection.get());
+				server->WriteAllClients(ServerToClientHeaders::SERVER_REMOVE_SELECTION, ClientRemovedSelectionData{ -1, start, end });
+				break;
+			}
+			case ConnectionType::CLIENT:
+			{
+				// We are a client, send the removed text selection data to the server; server will send it to the rest of the clients
+				std::unique_ptr<Connection>& connection = online_connection_thread_.GetManagedConnection();
+				Client* client = dynamic_cast<Client*>(connection.get());
+				client->Write(ClientToServerHeaders::CLIENT_REMOVE_SELECTION, ClientRemovedSelectionData{ client->ClientId(), start, end });
+				break;
+			}
+			}
 		});
 
 	connect(this, &Nutpad::OnClientReceivedTextFromServer, this, [this](char* host_text)
@@ -279,6 +299,11 @@ Nutpad::Nutpad(QWidget* parent) :
 	connect(this, &Nutpad::OnClientTextSelectionReceived, this, [this](const ClientSelectionData& data)
 		{
 			notepad_text_->ApplyClientHighlight(data.client_id_, data.start_, data.end_);
+		});
+
+	connect(this, &Nutpad::OnTextSelectionRemoved, this, [this](const ClientRemovedSelectionData& removed_selection)
+		{
+			notepad_text_->setText(notepad_text_->toPlainText().remove(removed_selection.start_index_, removed_selection.end_index_ - removed_selection.start_index_));
 		});
 
 	BindActionsToMenus();
@@ -413,8 +438,13 @@ void Nutpad::BindActionsToMenus()
 											{
 												std::cout << "SERVER: received selection data from client=" << selection_data.client_id_ << " with start=" << selection_data.start_ << " and end=" << selection_data.end_ << "\n";
 												emit this->OnClientTextSelectionReceived(selection_data);
-											});
-										online_connection_thread_.StartOnlineConnection(std::move(server), ConnectionType::HOST);
+											})
+											.SetOnClientSelectionRemoved([this](ClientRemovedSelectionData removed_selection)
+												{
+													std::cout << "SERVER: " << removed_selection << "\n";
+													emit this->OnTextSelectionRemoved(removed_selection);
+												});
+											online_connection_thread_.StartOnlineConnection(std::move(server), ConnectionType::HOST);
 
 				},
 				this);
@@ -449,8 +479,13 @@ void Nutpad::BindActionsToMenus()
 										{
 											std::cout << "CLIENT: received selection data from client=" << selection_data.client_id_ << " with start=" << selection_data.start_ << " and end=" << selection_data.end_ << "\n";
 											emit this->OnClientTextSelectionReceived(selection_data);
-										});
-									online_connection_thread_.StartOnlineConnection(std::move(client), ConnectionType::CLIENT);
+										})
+										.SetOnClientRemovedSelection([this](ClientRemovedSelectionData removed_selection)
+											{
+												std::cout << "CLIENT: " << removed_selection << "\n";
+												emit this->OnTextSelectionRemoved(removed_selection);
+											});
+										online_connection_thread_.StartOnlineConnection(std::move(client), ConnectionType::CLIENT);
 
 				},
 				this);

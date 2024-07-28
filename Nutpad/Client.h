@@ -29,6 +29,7 @@ private:
 	std::function<void(ClientRemovedCharacterData)> on_client_character_removed_;
 	std::function<void(ClientSelectionData)> on_selection_data_;
 	std::function<void(ClientCursorPositionData)> on_client_cursor_position_changed_;
+	std::function<void(ClientRemovedSelectionData)> on_client_removed_selection_;
 public:
 	Client(const std::string& ip, short port);
 	int ClientId() const;
@@ -92,6 +93,7 @@ public:
 	Client& SetOnClientCharacterRemoved(const std::function<void(ClientRemovedCharacterData)>& callback);
 	Client& SetSelectionDataCallback(const std::function<void(ClientSelectionData)>& callback);
 	Client& SetOnClientCursorPositionChanged(const std::function<void(ClientCursorPositionData)>& callback);
+	Client& SetOnClientRemovedSelection(const std::function<void(ClientRemovedSelectionData)>& callback);
 	void Terminate() override;
 	void RunIOContext() override;
 	void StopIOContext() override;
