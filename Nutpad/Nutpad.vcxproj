@@ -109,8 +109,10 @@
     <ClCompile Include="ClientColorTracker.cpp" />
     <ClCompile Include="ClientConnectionInfoDialog.cpp" />
     <ClCompile Include="ClientHandleMessageQueue.cpp" />
+    <ClCompile Include="ClientLegendWidget.cpp" />
     <ClCompile Include="ClientPacketParser.cpp" />
     <ClCompile Include="ClientTextData.cpp" />
+    <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="Connection.cpp" />
     <ClCompile Include="ConnectionInfoDialog.cpp" />
     <ClCompile Include="ConnectionParametersDialog.cpp" />
@@ -126,8 +128,10 @@
     <ClCompile Include="ServerPacketParser.cpp" />
     <ClCompile Include="TextIndexerThread.cpp" />
     <ClCompile Include="UndoTrackerThread.cpp" />
+    <ClCompile Include="ViewClientsDialog.cpp" />
     <QtRcc Include="Nutpad.qrc" />
     <QtUic Include="ClientConnectionInfoDialog.ui" />
+    <QtUic Include="ClientLegend.ui" />
     <QtUic Include="ConnectionParametersDialog.ui" />
     <QtUic Include="HostConnectionInfoDialog.ui" />
     <QtUic Include="InputFilenameDialog.ui" />
@@ -138,12 +142,16 @@
     <ClCompile Include="InputFilenameDialog.cpp" />
     <ClCompile Include="Nutpad.cpp" />
     <ClCompile Include="main.cpp" />
+    <QtUic Include="ViewClientsDialog.ui" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client.h" />
     <ClInclude Include="ClientColorTracker.h" />
     <ClInclude Include="ClientConnectionInfoDialog.h" />
     <ClInclude Include="ClientHandleMessageQueue.h" />
+    <ClInclude Include="ColorHelper.h" />
+    <ClInclude Include="ViewClientsDialog.h" />
+    <QtMoc Include="ClientLegendWidget.h" />
     <ClInclude Include="ClientPacketParser.h" />
     <ClInclude Include="ClientTextData.h" />
     <ClInclude Include="ClientToServerHeaders.h" />

@@ -77,6 +77,9 @@ public:
 
 	bool IsBackSpaceHeld() const;
 	int MouseCursorCurrentIndex() const;
+
+	const std::unordered_map<int, ClientTextData>& GetClientDataMapping() const;
+	std::unordered_map<int, ClientTextData>& GetClientDataMapping();
 signals:
 	void OnMouseLeftClick(int index_in_text_string);
 	void OnCharacterRemoved(int index_of_removed_char);

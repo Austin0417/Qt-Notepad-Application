@@ -5,15 +5,7 @@
 #include <QToolTip>
 #include <iostream>
 #include <random>
-
-static QColor GetRandomColor()
-{
-	static std::random_device dev;
-	static std::mt19937 rng(dev());
-	static std::uniform_int_distribution<std::mt19937::result_type> dist(50, 255);
-
-	return QColor(dist(rng), dist(rng), dist(rng));
-}
+#include "ColorHelper.h"
 
 
 NutpadTextEdit::NutpadTextEdit(QWidget* parent) :
@@ -225,6 +217,16 @@ bool NutpadTextEdit::IsBackSpaceHeld() const
 int NutpadTextEdit::MouseCursorCurrentIndex() const
 {
 	return current_index_of_mouse_cursor_;
+}
+
+const std::unordered_map<int, ClientTextData>& NutpadTextEdit::GetClientDataMapping() const
+{
+	return client_data_mapping_;
+}
+
+std::unordered_map<int, ClientTextData>& NutpadTextEdit::GetClientDataMapping()
+{
+	return client_data_mapping_;
 }
 
 

@@ -3,6 +3,7 @@
 #include "InputFilenameDialog.h"
 #include "HostConnectionInfoDialog.h"
 #include "ClientConnectionInfoDialog.h"
+#include "ColorHelper.h"
 #include "MessageBox.h"
 
 Nutpad::Nutpad(QWidget* parent) :
@@ -75,6 +76,8 @@ Nutpad::Nutpad(QWidget* parent) :
 	online_status_tool_button_->move(this->width() / 2, online_status_tool_button_->y());
 	online_status_tool_button_->setFixedWidth(this->width() / 2);
 
+	view_clients_dialog_ = std::make_unique<ViewClientsDialog>(this);
+
 	connect(file_dialog_.get(), &QFileDialog::fileSelected, this, [this](const QString& directory)
 		{
 
@@ -120,10 +123,12 @@ Nutpad::Nutpad(QWidget* parent) :
 			setWindowTitle(QString::fromStdString(input_file_name));
 		});
 
-	connect(this, &Nutpad::OnOnlineConnectionStartSuccess, this, [this](QAction* host_notepad_action, QAction* join_notepad_action, QAction* terminate_connection_action)
+	connect(this, &Nutpad::OnOnlineConnectionStartSuccess, this, [this](QAction* host_notepad_action, QAction* join_notepad_action, QAction* view_other_clients, QAction* terminate_connection_action)
 		{
 			host_notepad_action->setEnabled(false);
 			join_notepad_action->setEnabled(false);
+
+			view_other_clients->setEnabled(true);
 			terminate_connection_action->setEnabled(true);
 		});
 
@@ -182,37 +187,6 @@ Nutpad::Nutpad(QWidget* parent) :
 			}
 			}
 		});
-
-	/*
-	connect(notepad_text_.get(), &NutpadTextEdit::OnCharacterRemoved, this, [this](QChar removed)
-		{
-			if (current_edit_operation_.GetEditType() == EditOperation::EditType::ADD && !current_edit_operation_.GetEditContent().isEmpty())
-			{
-				recent_edit_operations_stack_.push(current_edit_operation_);
-				current_edit_operation_.SetEditType(EditOperation::EditType::ERASE);
-				current_edit_operation_.ResetEditOperation();
-			}
-
-			current_edit_operation_.SetEditType(EditOperation::EditType::ERASE);
-			current_edit_operation_.AddCharacterToEditContent(removed);
-
-			undo_tracker_thread_.SetTimeOfLastEdit(std::chrono::high_resolution_clock::now());
-		});
-
-	connect(notepad_text_.get(), &NutpadTextEdit::OnCharacterAdded, this, [this](QChar added)
-		{
-			if (current_edit_operation_.GetEditType() == EditOperation::EditType::ERASE && !current_edit_operation_.GetEditContent().isEmpty())
-			{
-				recent_edit_operations_stack_.push(current_edit_operation_);
-				current_edit_operation_.SetEditType(EditOperation::EditType::ADD);
-				current_edit_operation_.ResetEditOperation();
-			}
-
-			current_edit_operation_.SetEditType(EditOperation::EditType::ADD);
-			current_edit_operation_.AddCharacterToEditContent(added);
-			undo_tracker_thread_.SetTimeOfLastEdit(std::chrono::high_resolution_clock::now());
-		});
-		*/
 
 	connect(notepad_text_.get(), &NutpadTextEdit::OnCharacterRemoved, this, [this](int index_of_removed_char)
 		{
@@ -378,7 +352,10 @@ void Nutpad::BindActionsToMenus()
 
 	QAction* host_notepad_action = online_menu->addAction("Host");
 	QAction* join_notepad_action = online_menu->addAction("Join");
+	QAction* view_other_clients_action = online_menu->addAction("View Current Clients");
 	QAction* terminate_connection_action = online_menu->addAction("Terminate Connection");
+
+	view_other_clients_action->setEnabled(false);
 	terminate_connection_action->setEnabled(false);
 
 	// TODO Connect event handlers for every menu action here
@@ -407,9 +384,9 @@ void Nutpad::BindActionsToMenus()
 			Undo();
 		});
 
-	connect(host_notepad_action, &QAction::triggered, this, [this, host_notepad_action, join_notepad_action, terminate_connection_action]()
+	connect(host_notepad_action, &QAction::triggered, this, [this, host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action]()
 		{
-			ConnectionParametersDialog* dialog = new ConnectionParametersDialog([this, host_notepad_action, join_notepad_action, terminate_connection_action](const QString& server_ip, short port)
+			ConnectionParametersDialog* dialog = new ConnectionParametersDialog([this, host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action](const QString& server_ip, short port)
 				{
 					qDebug() << "Starting server with ip=" << server_ip << " on port=" << port;
 					std::unique_ptr<Server> server = std::make_unique<Server>(server_ip.toStdString(), port);
@@ -422,9 +399,9 @@ void Nutpad::BindActionsToMenus()
 								//client_cursor_mapping_[id_of_joined_client] = std::make_unique<QTextCursor>(notepad_text_->document());
 
 							})
-							.SetOnStartSuccessCallback([this, host_notepad_action, join_notepad_action, terminate_connection_action]()
+							.SetOnStartSuccessCallback([this, host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action]()
 								{
-									emit this->OnOnlineConnectionStartSuccess(host_notepad_action, join_notepad_action, terminate_connection_action);
+									emit this->OnOnlineConnectionStartSuccess(host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action);
 								})
 								.SetOnClientCharacterRemoved([this](ClientRemovedCharacterData removed_char_data)
 									{
@@ -453,19 +430,19 @@ void Nutpad::BindActionsToMenus()
 			dialog->show();
 		});
 
-	connect(join_notepad_action, &QAction::triggered, this, [this, host_notepad_action, join_notepad_action, terminate_connection_action]()
+	connect(join_notepad_action, &QAction::triggered, this, [this, host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action]()
 		{
-			ConnectionParametersDialog* dialog = new ConnectionParametersDialog([this, host_notepad_action, join_notepad_action, terminate_connection_action](const QString& server_ip, short port)
+			ConnectionParametersDialog* dialog = new ConnectionParametersDialog([this, host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action](const QString& server_ip, short port)
 				{
 					qDebug() << "Attempting connection to server with ip=" << server_ip << " on port=" << port;
 					std::unique_ptr<Client> client = std::make_unique<Client>(server_ip.toStdString(), port);
-					client->SetOnHostTextReceived([this, host_notepad_action, join_notepad_action, terminate_connection_action](char* content_buffer)
+					client->SetOnHostTextReceived([this, host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action](char* content_buffer)
 						{
 							emit this->OnClientReceivedTextFromServer(content_buffer);
 						})
-						.SetOnClientConnectSuccess([this, host_notepad_action, join_notepad_action, terminate_connection_action]()
+						.SetOnClientConnectSuccess([this, host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action]()
 							{
-								emit this->OnOnlineConnectionStartSuccess(host_notepad_action, join_notepad_action, terminate_connection_action);
+								emit this->OnOnlineConnectionStartSuccess(host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action);
 							})
 							.SetOnClientCharacterRemoved([this](ClientRemovedCharacterData removed_char_data)
 								{
@@ -493,7 +470,20 @@ void Nutpad::BindActionsToMenus()
 			dialog->show();
 		});
 
-	connect(terminate_connection_action, &QAction::triggered, this, [this, host_notepad_action, join_notepad_action, terminate_connection_action]()
+	connect(view_other_clients_action, &QAction::triggered, this, [this]()
+		{
+			// TODO REMOVE LATER (THIS IS ONLY FOR TESTING PURPOSES)
+			for (int i = 0; i < 10; i++)
+			{
+				// Creating ten sample clients to test scroll area functionality
+				view_clients_dialog_->AddClientLegend("Client " + std::to_string(i), GetRandomColor());
+			}
+
+
+			view_clients_dialog_->show();
+		});
+
+	connect(terminate_connection_action, &QAction::triggered, this, [this, host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action]()
 		{
 			if (online_connection_thread_.GetConnectionType() != ConnectionType::OFFLINE)
 			{
@@ -501,6 +491,7 @@ void Nutpad::BindActionsToMenus()
 				host_notepad_action->setEnabled(true);
 				join_notepad_action->setEnabled(true);
 				terminate_connection_action->setEnabled(false);
+				view_other_clients_action->setEnabled(false);
 
 				online_connection_thread_.ClearConnection();
 

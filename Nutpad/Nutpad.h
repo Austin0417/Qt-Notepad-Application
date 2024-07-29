@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <stack>
 #include "NutpadTextEdit.h"
+#include "ViewClientsDialog.h"
 #include "EditOperation.h"
 #include "UndoTrackerThread.h"
 #include "Server.h"
@@ -72,6 +73,9 @@ private:
 	// Text Indexer thread for fast word search/find operations
 	TextIndexerThread text_indexer_thread_;
 
+	// View Clients Dialog
+	std::unique_ptr<ViewClientsDialog> view_clients_dialog_;
+
 public:
 	Nutpad(QWidget* parent = nullptr);
 	void keyPressEvent(QKeyEvent* event) override;
@@ -82,7 +86,7 @@ signals:
 	void OnCompletedFileRead(const std::string& name_of_file_read, const std::string& input_text);
 	void OnClientReceivedTextFromServer(char* host_text);
 	void OnClientCursorPositionChanged(const ClientCursorPositionData& cursor_data);
-	void OnOnlineConnectionStartSuccess(QAction* host, QAction* join, QAction* terminate);
+	void OnOnlineConnectionStartSuccess(QAction* host, QAction* join, QAction* view_other_clients, QAction* terminate);
 	void OnClientCharacterRemoved(const ClientRemovedCharacterData& removed_char_data);
 	void OnClientTextSelectionReceived(const ClientSelectionData& selection_data);
 	void OnTextSelectionRemoved(const ClientRemovedSelectionData& removed_selection);

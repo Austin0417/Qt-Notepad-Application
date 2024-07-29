@@ -136,6 +136,15 @@
     <ClCompile Include="ClientTextData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ClientLegendWidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ViewClientsDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ColorHelper.cpp">
+      <Filter>Source Files\helpers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileOperationThread.h">
@@ -210,6 +219,12 @@
     <ClInclude Include="ClientTextData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ViewClientsDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ColorHelper.h">
+      <Filter>Header Files\helpers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="InputFilenameDialog.ui">
@@ -224,6 +239,12 @@
     <QtUic Include="ClientConnectionInfoDialog.ui">
       <Filter>Form Files</Filter>
     </QtUic>
+    <QtUic Include="ViewClientsDialog.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="ClientLegend.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="ConnectionParametersDialog.h">
@@ -234,6 +255,9 @@
     </QtMoc>
     <QtMoc Include="OnlineStatusToolButton.h">
       <Filter>Header Files\derived</Filter>
+    </QtMoc>
+    <QtMoc Include="ClientLegendWidget.h">
+      <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
 </Project>
