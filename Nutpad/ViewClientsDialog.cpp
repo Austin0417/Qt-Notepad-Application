@@ -52,6 +52,20 @@ void ViewClientsDialog::AddClientLegend(const std::string& client_name, const QC
 		if (vbox_layout != nullptr)
 		{
 			vbox_layout->addWidget(client_legend_widgets_.back().get());
+
 		}
 	}
+}
+
+void ViewClientsDialog::ClearLegend()
+{
+	if (!client_legend_widgets_.empty() && scroll_area_->widget() != nullptr && scroll_area_->widget()->layout() != nullptr)
+	{
+		QLayout* layout = scroll_area_->widget()->layout();
+		for (const auto& client_legend : client_legend_widgets_)
+		{
+			layout->removeWidget(client_legend.get());
+		}
+	}
+	client_legend_widgets_.clear();
 }

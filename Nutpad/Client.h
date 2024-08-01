@@ -26,6 +26,8 @@ private:
 
 	std::function<void(char*)> on_received_text_from_host_;
 	std::function<void()> on_client_connect_success_;
+	std::function<void(ClientColorPacket)> on_client_color_received_;
+	std::function<void(std::vector<ClientColorPacket>)> on_all_client_colors_received_;
 	std::function<void(ClientRemovedCharacterData)> on_client_character_removed_;
 	std::function<void(ClientSelectionData)> on_selection_data_;
 	std::function<void(ClientCursorPositionData)> on_client_cursor_position_changed_;
@@ -90,6 +92,8 @@ public:
 
 	Client& SetOnHostTextReceived(const std::function<void(char*)>& callback);
 	Client& SetOnClientConnectSuccess(const std::function<void()>& callback);
+	Client& SetOnClientColorReceivedCallback(const std::function<void(ClientColorPacket)>& callback);
+	Client& SetOnAllClientColorsReceivedCallback(const std::function<void(std::vector<ClientColorPacket>)>& callback);
 	Client& SetOnClientCharacterRemoved(const std::function<void(ClientRemovedCharacterData)>& callback);
 	Client& SetSelectionDataCallback(const std::function<void(ClientSelectionData)>& callback);
 	Client& SetOnClientCursorPositionChanged(const std::function<void(ClientCursorPositionData)>& callback);

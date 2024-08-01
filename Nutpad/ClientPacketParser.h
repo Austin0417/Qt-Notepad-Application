@@ -2,7 +2,12 @@
 #include <iostream>
 #include "Connection.h"
 #include "NetworkStructures.h"
+#include "ColorHelper.h"
 
+
+ClientColorPacket GetClientColorPacketFromStream(std::istream& is);
+
+std::vector<ClientColorPacket> GetAllClientColorsFromStream(std::istream& is);
 
 ClientCursorPositionData GetCursorPositionDataFromStream(std::istream& is);
 

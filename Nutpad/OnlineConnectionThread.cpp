@@ -44,6 +44,10 @@ const std::unique_ptr<Connection>& OnlineConnectionThread::GetManagedConnection(
 
 OnlineConnectionThread::~OnlineConnectionThread()
 {
-	managed_connection_->StopIOContext();
+	if (managed_connection_ != nullptr)
+	{
+		managed_connection_->StopIOContext();
+	}
+
 	online_thread_.join();
 }

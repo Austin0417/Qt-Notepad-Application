@@ -83,14 +83,7 @@ void Client::Read()
 			{
 				std::istream is(&read_buffer_);
 
-				// Determine the type of message sent by the server
 
-				/*
-				char message_type;
-				is.read(&message_type, sizeof(char));
-
-				int message_type_int = std::atoi(&message_type);
-				*/
 				switch (GetMessageType(is))
 				{
 				case ServerToClientHeaders::SEND_ID:
@@ -106,6 +99,19 @@ void Client::Read()
 					char* contents_buffer = ParseTextData(is);
 					std::cout << "CLIENT: received text content from server\n" << contents_buffer;
 					on_received_text_from_host_(contents_buffer);
+					break;
+				}
+				case ServerToClientHeaders::SEND_CLIENT_COLOR:
+				{
+					ClientColorPacket client_color_packet = GetClientColorPacketFromStream(is);
+					on_client_color_received_(client_color_packet);
+					std::cout << "CLIENT: received client color packet=" << client_color_packet << "\n";
+					break;
+				}
+				case ServerToClientHeaders::SEND_ALL_CLIENT_COLORS:
+				{
+					std::vector<ClientColorPacket> client_colors = GetAllClientColorsFromStream(is);
+					on_all_client_colors_received_(client_colors);
 					break;
 				}
 				case ServerToClientHeaders::SERVER_END:
@@ -161,6 +167,20 @@ Client& Client::SetOnClientConnectSuccess(const std::function<void()>& callback)
 	on_client_connect_success_ = callback;
 	return *this;
 }
+
+Client& Client::SetOnClientColorReceivedCallback(const std::function<void(ClientColorPacket)>& callback)
+{
+	on_client_color_received_ = callback;
+	return *this;
+}
+
+Client& Client::SetOnAllClientColorsReceivedCallback(const std::function<void(std::vector<ClientColorPacket>)>& callback)
+{
+	on_all_client_colors_received_ = callback;
+	return *this;
+}
+
+
 
 Client& Client::SetOnClientCharacterRemoved(const std::function<void(ClientRemovedCharacterData)>& callback)
 {

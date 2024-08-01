@@ -1,5 +1,6 @@
 #include "Server.h"
 
+
 static ClientToServerHeaders GetMessageType(std::istream& is)
 {
 	char message_type;
@@ -16,12 +17,6 @@ void ServerToClientHandle::Read()
 			{
 				std::istream is(&read_buffer_);
 
-				/*
-				char message_header;
-				is.read(&message_header, sizeof(char));
-
-				int message_header_int = std::atoi(&message_header);
-				*/
 				switch (GetMessageType(is))
 				{
 				case ClientToServerHeaders::CLIENT_ACKNOWLEDGEMENT:
@@ -38,7 +33,8 @@ void ServerToClientHandle::Read()
 					{
 
 						const char* message_to_send = message_queue_.RetrieveNextMessage();
-						Write(ServerToClientHeaders::SEND_TEXT, std::string{ message_to_send }, true);
+						char header = message_to_send[0];
+						Write(static_cast<ServerToClientHeaders>(std::atoi(&header)), std::string{ message_to_send + 1 }, true);
 						message_queue_.PopQueue();
 					}
 
@@ -104,6 +100,18 @@ int ServerToClientHandle::GetClientId() const
 	return client_id_;
 }
 
+void ServerToClientHandle::LaunchMessageQueue()
+{
+	if (!message_queue_.IsEmpty())
+	{
+		const char* first_message = message_queue_.RetrieveNextMessage();
+		char header = first_message[0];
+		Write(static_cast<ServerToClientHeaders>(std::atoi(&header)), std::string{ first_message + 1 }, true);
+		message_queue_.PopQueue();
+	}
+}
+
+
 ServerToClientHandle& ServerToClientHandle::SetOnClientTerminatedCallback(const std::function<void(int)>& callback)
 {
 	on_client_terminated_ = callback;
@@ -163,6 +171,13 @@ Server& Server::SetOnClientJoinCallback(const std::function<void(int)>& callback
 	return *this;
 }
 
+Server& Server::SetOnClientColorSetCallback(const std::function<void(int, QColor)>& callback)
+{
+	on_client_color_set_ = callback;
+	return *this;
+}
+
+
 Server& Server::SetOnStartSuccessCallback(const std::function<void()>& callback)
 {
 	on_start_success_ = callback;
@@ -194,17 +209,40 @@ Server& Server::SetOnClientSelectionRemoved(const std::function<void(ClientRemov
 	return *this;
 }
 
+Server& Server::SetGetClientColorsCallback(const std::function<std::vector<ClientColorPacket>()>& callback)
+{
+	get_client_colors_ = callback;
+	return *this;
+}
 
 
 void Server::Start()
 {
-	on_start_success_();
+	if (first_startup_)
+	{
+		on_start_success_();
+		first_startup_ = false;
+	}
 	acceptor_.async_accept([this](boost::system::error_code ec, tcp::socket socket)
 		{
 			if (!ec)
 			{
+				// TODO Synchronized client colors approach
+				// Upon a client joining, the server will generate the color for the client, then send this color to the client so that they can store this color on their client side
+				// At the same time, send the generated color for the new client, along with the new client's id to the rest of the clients, so that they have the new client's color as well
+
 				std::cout << "SERVER: successfully accepted oncoming client connection, id=" << next_client_id_ << "\n";
 				std::unique_ptr<ServerToClientHandle> client = std::make_unique<ServerToClientHandle>(this, next_client_id_, socket);
+
+				QColor new_client_color = GetRandomColor();
+				on_client_color_set_(next_client_id_, new_client_color);
+
+				// The new client hasn't been added to the vector of clients yet, this should be fine
+				for (auto& client : clients_)
+				{
+					client->Write(ServerToClientHeaders::SEND_CLIENT_COLOR, ClientColorPacket{ next_client_id_, new_client_color }, true);
+				}
+
 				client->SetOnClientTerminatedCallback([this](int terminated_client_id)
 					{
 						// TODO Remove the ServerToClientHandle with the given id here
@@ -269,14 +307,23 @@ void Server::Start()
 								on_client_join_(next_client_id_);
 
 								// Send the client's assigned id to the client
-								clients_.back()->Write(ServerToClientHeaders::SEND_ID, next_client_id_, true);
+								//clients_.back()->Write(ServerToClientHeaders::SEND_ID, next_client_id_, true);
+								clients_.back()->Write(ServerToClientHeaders::SEND_ID, next_client_id_);
 								next_client_id_++;
 
 								// TODO Needs acknowledgement from the client that it has successfully processed the previous message before the server sends the next message
-								// TODO IDEA: store messages from the server in a queue, and after receiving an acknoledgement from the client, pop a message from the queue and send it
+								// TODO IDEA: store messages from the server in a queue, and after receiving an acknowledgement from the client, pop a message from the queue and send it
 								// Send the current text of the server/host's notepad to the client
 
 								clients_.back()->Write(ServerToClientHeaders::SEND_TEXT, get_host_current_text_().toStdString());
+
+								// TODO Here, we also send the newest client the colors of the rest of the clients
+								std::vector<ClientColorPacket> client_colors = get_client_colors_();
+								std::cout << "SERVER: sending client colors=" << client_colors << "\n";
+
+								clients_.back()->Write(ServerToClientHeaders::SEND_ALL_CLIENT_COLORS, client_colors);
+
+								clients_.back()->LaunchMessageQueue();
 
 								Start();
 			}

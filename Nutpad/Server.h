@@ -7,16 +7,20 @@
 #include "ClientHandleMessageQueue.h"
 #include "Connection.h"
 #include "ClientPacketParser.h"
+#include "ColorHelper.h"
 #include <iostream>
 #include <sstream>
 #include <functional>
 #include <QString>
+#include <QColor>
+
+#include "ClientTextData.h"
 
 template<typename T>
-static char* ConvertMessageDataToCharArray(const T& data)
+static char* ConvertMessageDataToCharArray(ServerToClientHeaders header, const T& data)
 {
 	std::stringstream ss;
-	ss << data << '\0';
+	ss << static_cast<int>(header) << data << '\0';
 
 	ss.seekg(0, std::ios::end);
 	std::size_t buffer_len = ss.tellg();
@@ -58,6 +62,7 @@ public:
 	void Read();
 	tcp::socket& GetSocket();
 	int GetClientId() const;
+	void LaunchMessageQueue();
 
 	template<typename T>
 	void Write(ServerToClientHeaders header, const T& data, bool should_bypass_queue = false)
@@ -78,7 +83,7 @@ public:
 		else
 		{
 			// TODO Place the server-to-client message in the client handle's queue, to send when the client indicates it is ready
-			message_queue_.PushMessage(ConvertMessageDataToCharArray(data));
+			message_queue_.PushMessage(ConvertMessageDataToCharArray(header, data));
 		}
 	}
 
@@ -103,16 +108,20 @@ class Server : public Connection
 private:
 	//std::string host_ip_address_;
 	//short host_port_;
+	bool first_startup_ = true;
 	tcp::acceptor acceptor_;
 
 	std::vector<std::unique_ptr<ServerToClientHandle>> clients_;
 	std::function<QString()> get_host_current_text_;
 	std::function<void(int)> on_client_join_;
+	std::function<void(int, QColor)> on_client_color_set_;
 	std::function<void()> on_start_success_;
 	std::function<void(const ClientCursorPositionData&)> on_client_cursor_position_changed_;
 	std::function<void(ClientSelectionData)> on_client_selection_;
 	std::function<void(ClientRemovedCharacterData)> on_client_character_removed_;
 	std::function<void(ClientRemovedSelectionData)> on_client_selection_removed_;
+
+	std::function<std::vector<ClientColorPacket>()> get_client_colors_;
 	int num_clients_acknowledged_termination_;
 	std::condition_variable cv_;
 	std::mutex mutex_;
@@ -122,11 +131,13 @@ public:
 	Server(const std::string& ip, short port);
 	Server& SetCurrentHostTextCallback(const std::function<QString()>& callback);
 	Server& SetOnClientJoinCallback(const std::function<void(int)>& callback);
+	Server& SetOnClientColorSetCallback(const std::function<void(int, QColor)>& callback);
 	Server& SetOnStartSuccessCallback(const std::function<void()>& callback);
 	Server& SetOnClientCursorPositionChanged(const std::function<void(const ClientCursorPositionData&)>& callback);
 	Server& SetOnClientSelectionCallback(const std::function<void(ClientSelectionData)>& callback);
 	Server& SetOnClientCharacterRemoved(const std::function<void(ClientRemovedCharacterData)>& callback);
 	Server& SetOnClientSelectionRemoved(const std::function<void(ClientRemovedSelectionData)>& callback);
+	Server& SetGetClientColorsCallback(const std::function<std::vector<ClientColorPacket>()>& callback);
 	void Start() override;
 
 	template<typename T>

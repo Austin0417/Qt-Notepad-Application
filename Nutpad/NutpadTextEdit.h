@@ -13,6 +13,8 @@
 #include <functional>
 #include <thread>
 
+#include "ColorHelper.h"
+
 
 class NutpadTextEdit : public QTextEdit
 {
@@ -77,6 +79,8 @@ public:
 
 	bool IsBackSpaceHeld() const;
 	int MouseCursorCurrentIndex() const;
+
+	std::vector<ClientColorPacket> GetAllClientColors() const;
 
 	const std::unordered_map<int, ClientTextData>& GetClientDataMapping() const;
 	std::unordered_map<int, ClientTextData>& GetClientDataMapping();

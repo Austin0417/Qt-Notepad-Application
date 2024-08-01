@@ -1,6 +1,67 @@
 #include "ClientPacketParser.h"
 
 
+
+ClientColorPacket GetClientColorPacketFromStream(std::istream& is)
+{
+	// Character buffers for packet data/headers
+	char client_id_buffer[NUM_DIGITS_CLIENT_ID + 1];
+	char client_color_buffer[ColorPacket::MAX_LENGTH_COLOR_FIELD + 1];
+
+	memset(client_color_buffer, 0, sizeof(client_color_buffer));
+
+	// Read character data into their respective buffers
+	is.read(client_id_buffer, NUM_DIGITS_CLIENT_ID);
+	is.read(client_color_buffer, ColorPacket::MAX_LENGTH_COLOR_FIELD);
+
+	// Null-terminate buffers
+	client_id_buffer[NUM_DIGITS_CLIENT_ID] = '\0';
+	client_color_buffer[ColorPacket::MAX_LENGTH_COLOR_FIELD] = '\0';
+
+	// Reconstructing the color data into a QColor object
+	QString color_string(client_color_buffer);
+
+	// Remove any potential whitespace padding
+	color_string.replace(" ", "");
+
+	if (color_string.isEmpty())
+	{
+		return ClientColorPacket{};
+	}
+
+	QStringList split_color_string = color_string.split(",");
+
+	if (split_color_string.size() < 3)
+	{
+		return ClientColorPacket{};
+	}
+
+	int red = split_color_string[0].toInt();
+	int green = split_color_string[1].toInt();
+	int blue = split_color_string[2].toInt();
+
+	return ClientColorPacket{ std::atoi(client_id_buffer), QColor{red, green, blue} };
+}
+
+std::vector<ClientColorPacket> GetAllClientColorsFromStream(std::istream& is)
+{
+	std::vector<ClientColorPacket> result;
+
+	while (!is.eof() && !is.fail())
+	{
+		ClientColorPacket client_color_packet = GetClientColorPacketFromStream(is);
+		if (!client_color_packet.is_valid_)
+		{
+			break;
+		}
+		result.push_back(client_color_packet);
+	}
+
+	return result;
+}
+
+
+
 ClientCursorPositionData GetCursorPositionDataFromStream(std::istream& is)
 {
 	char client_id_char_buffer[CursorPositionData::NUM_DIGITS_CLIENT_ID_ + 1];

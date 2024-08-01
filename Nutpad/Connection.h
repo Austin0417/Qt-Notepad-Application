@@ -4,6 +4,14 @@
 
 int GetNumDigitsFromInteger(int value);
 
+constexpr int NUM_DIGITS_CLIENT_ID = 2;
+
+
+namespace ColorPacket
+{
+	constexpr int MAX_LENGTH_COLOR_FIELD = 11;
+}
+
 namespace ClientTerminationData
 {
 	constexpr int NUM_DIGITS_CLIENT_ID = 2;

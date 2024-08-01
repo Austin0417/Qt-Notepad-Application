@@ -219,6 +219,19 @@ int NutpadTextEdit::MouseCursorCurrentIndex() const
 	return current_index_of_mouse_cursor_;
 }
 
+std::vector<ClientColorPacket> NutpadTextEdit::GetAllClientColors() const
+{
+	std::vector<ClientColorPacket> result;
+
+	for (const auto& entry : client_data_mapping_)
+	{
+		result.emplace_back(entry.first, entry.second.GetColor());
+	}
+
+	return result;
+}
+
+
 const std::unordered_map<int, ClientTextData>& NutpadTextEdit::GetClientDataMapping() const
 {
 	return client_data_mapping_;

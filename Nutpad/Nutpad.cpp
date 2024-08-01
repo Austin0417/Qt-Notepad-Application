@@ -10,13 +10,7 @@ Nutpad::Nutpad(QWidget* parent) :
 	QMainWindow(parent),
 	undo_tracker_thread_([this]()
 		{
-			/*
-				if (!current_edit_operation_.GetEditContent().isEmpty())
-				{
-					recent_edit_operations_stack_.push(current_edit_operation_);
-					current_edit_operation_.ResetEditOperation();
-				}
-				*/
+
 		}),
 		text_indexer_thread_([this](const std::unordered_map<std::string, std::vector<size_t>>& token_indices_mapping)
 			{
@@ -123,8 +117,21 @@ Nutpad::Nutpad(QWidget* parent) :
 			setWindowTitle(QString::fromStdString(input_file_name));
 		});
 
-	connect(this, &Nutpad::OnOnlineConnectionStartSuccess, this, [this](QAction* host_notepad_action, QAction* join_notepad_action, QAction* view_other_clients, QAction* terminate_connection_action)
+	connect(this, &Nutpad::OnOnlineConnectionStartSuccess, this, [this](ConnectionType connection_type, QAction* host_notepad_action, QAction* join_notepad_action, QAction* view_other_clients, QAction* terminate_connection_action)
 		{
+			// Set the host's color
+			if (connection_type == ConnectionType::HOST)
+			{
+				std::unordered_map<int, ClientTextData>& client_data = notepad_text_->GetClientDataMapping();
+				client_data[-1] = ClientTextData(-1);
+				client_data[-1].SetColor(GetRandomColor());
+				const QColor& host_color = client_data[-1].GetColor();
+				int host_red = host_color.red();
+				int host_green = host_color.green();
+				int host_blue = host_color.blue();
+				std::cout << "\n";
+			}
+
 			host_notepad_action->setEnabled(false);
 			join_notepad_action->setEnabled(false);
 
@@ -399,29 +406,42 @@ void Nutpad::BindActionsToMenus()
 								//client_cursor_mapping_[id_of_joined_client] = std::make_unique<QTextCursor>(notepad_text_->document());
 
 							})
-							.SetOnStartSuccessCallback([this, host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action]()
+							.SetOnClientColorSetCallback([this](int client_id, QColor client_color)
 								{
-									emit this->OnOnlineConnectionStartSuccess(host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action);
-								})
-								.SetOnClientCharacterRemoved([this](ClientRemovedCharacterData removed_char_data)
+									std::unordered_map<int, ClientTextData>& client_data_mapping = notepad_text_->GetClientDataMapping();
+									if (client_data_mapping.find(client_id) == client_data_mapping.end())
 									{
-										emit this->OnClientCharacterRemoved(removed_char_data);
+										client_data_mapping[client_id] = ClientTextData{ client_id };
+									}
+									client_data_mapping[client_id].SetColor(client_color);
+								})
+								.SetOnStartSuccessCallback([this, host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action]()
+									{
+										emit this->OnOnlineConnectionStartSuccess(ConnectionType::HOST, host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action);
 									})
-									.SetOnClientCursorPositionChanged([this](const ClientCursorPositionData& cursor_data)
+									.SetOnClientCharacterRemoved([this](ClientRemovedCharacterData removed_char_data)
 										{
-											emit this->OnClientCursorPositionChanged(cursor_data);
+											emit this->OnClientCharacterRemoved(removed_char_data);
 										})
-										.SetOnClientSelectionCallback([this](ClientSelectionData selection_data)
+										.SetOnClientCursorPositionChanged([this](const ClientCursorPositionData& cursor_data)
 											{
-												std::cout << "SERVER: received selection data from client=" << selection_data.client_id_ << " with start=" << selection_data.start_ << " and end=" << selection_data.end_ << "\n";
-												emit this->OnClientTextSelectionReceived(selection_data);
+												emit this->OnClientCursorPositionChanged(cursor_data);
 											})
-											.SetOnClientSelectionRemoved([this](ClientRemovedSelectionData removed_selection)
+											.SetOnClientSelectionCallback([this](ClientSelectionData selection_data)
 												{
-													std::cout << "SERVER: " << removed_selection << "\n";
-													emit this->OnTextSelectionRemoved(removed_selection);
-												});
-											online_connection_thread_.StartOnlineConnection(std::move(server), ConnectionType::HOST);
+													std::cout << "SERVER: received selection data from client=" << selection_data.client_id_ << " with start=" << selection_data.start_ << " and end=" << selection_data.end_ << "\n";
+													emit this->OnClientTextSelectionReceived(selection_data);
+												})
+												.SetOnClientSelectionRemoved([this](ClientRemovedSelectionData removed_selection)
+													{
+														std::cout << "SERVER: " << removed_selection << "\n";
+														emit this->OnTextSelectionRemoved(removed_selection);
+													})
+													.SetGetClientColorsCallback([this]()
+														{
+															return notepad_text_->GetAllClientColors();
+														});
+													online_connection_thread_.StartOnlineConnection(std::move(server), ConnectionType::HOST);
 
 				},
 				this);
@@ -442,27 +462,46 @@ void Nutpad::BindActionsToMenus()
 						})
 						.SetOnClientConnectSuccess([this, host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action]()
 							{
-								emit this->OnOnlineConnectionStartSuccess(host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action);
+								emit this->OnOnlineConnectionStartSuccess(ConnectionType::CLIENT, host_notepad_action, join_notepad_action, view_other_clients_action, terminate_connection_action);
 							})
-							.SetOnClientCharacterRemoved([this](ClientRemovedCharacterData removed_char_data)
+							.SetOnClientColorReceivedCallback([this](ClientColorPacket color_packet)
 								{
-									emit this->OnClientCharacterRemoved(removed_char_data);
-								})
-								.SetOnClientCursorPositionChanged([this](ClientCursorPositionData cursor_data)
+									// Add the client id-color key-value pair to local client mapping
+									std::unordered_map<int, ClientTextData>& client_mapping = notepad_text_->GetClientDataMapping();
+									if (client_mapping.find(color_packet.client_id_) == client_mapping.end())
 									{
-										emit this->OnClientCursorPositionChanged(cursor_data);
-									})
-									.SetSelectionDataCallback([this](ClientSelectionData selection_data)
+										client_mapping[color_packet.client_id_] = ClientTextData(color_packet.client_id_);
+									}
+									client_mapping[color_packet.client_id_].SetColor(color_packet.client_color_);
+								})
+								.SetOnAllClientColorsReceivedCallback([this](std::vector<ClientColorPacket> client_colors)
+									{
+										std::unordered_map<int, ClientTextData>& client_data_mapping_ = notepad_text_->GetClientDataMapping();
+										for (const auto& client_color : client_colors)
 										{
-											std::cout << "CLIENT: received selection data from client=" << selection_data.client_id_ << " with start=" << selection_data.start_ << " and end=" << selection_data.end_ << "\n";
-											emit this->OnClientTextSelectionReceived(selection_data);
+											client_data_mapping_[client_color.client_id_] = ClientTextData(client_color.client_id_);
+											client_data_mapping_[client_color.client_id_].SetColor(client_color.client_color_);
+										}
+									})
+									.SetOnClientCharacterRemoved([this](ClientRemovedCharacterData removed_char_data)
+										{
+											emit this->OnClientCharacterRemoved(removed_char_data);
 										})
-										.SetOnClientRemovedSelection([this](ClientRemovedSelectionData removed_selection)
+										.SetOnClientCursorPositionChanged([this](ClientCursorPositionData cursor_data)
 											{
-												std::cout << "CLIENT: " << removed_selection << "\n";
-												emit this->OnTextSelectionRemoved(removed_selection);
-											});
-										online_connection_thread_.StartOnlineConnection(std::move(client), ConnectionType::CLIENT);
+												emit this->OnClientCursorPositionChanged(cursor_data);
+											})
+											.SetSelectionDataCallback([this](ClientSelectionData selection_data)
+												{
+													std::cout << "CLIENT: received selection data from client=" << selection_data.client_id_ << " with start=" << selection_data.start_ << " and end=" << selection_data.end_ << "\n";
+													emit this->OnClientTextSelectionReceived(selection_data);
+												})
+												.SetOnClientRemovedSelection([this](ClientRemovedSelectionData removed_selection)
+													{
+														std::cout << "CLIENT: " << removed_selection << "\n";
+														emit this->OnTextSelectionRemoved(removed_selection);
+													});
+												online_connection_thread_.StartOnlineConnection(std::move(client), ConnectionType::CLIENT);
 
 				},
 				this);
@@ -472,13 +511,22 @@ void Nutpad::BindActionsToMenus()
 
 	connect(view_other_clients_action, &QAction::triggered, this, [this]()
 		{
-			// TODO REMOVE LATER (THIS IS ONLY FOR TESTING PURPOSES)
-			for (int i = 0; i < 10; i++)
+			if (view_clients_dialog_ == nullptr)
 			{
-				// Creating ten sample clients to test scroll area functionality
-				view_clients_dialog_->AddClientLegend("Client " + std::to_string(i), GetRandomColor());
+				view_clients_dialog_ = std::make_unique<ViewClientsDialog>(this);
+				for (const auto& entry : notepad_text_->GetClientDataMapping())
+				{
+					view_clients_dialog_->AddClientLegend("Client " + std::to_string(entry.first), entry.second.GetColor());
+				}
 			}
-
+			else
+			{
+				view_clients_dialog_->ClearLegend();
+				for (const auto& entry : notepad_text_->GetClientDataMapping())
+				{
+					view_clients_dialog_->AddClientLegend("Client " + std::to_string(entry.first), entry.second.GetColor());
+				}
+			}
 
 			view_clients_dialog_->show();
 		});
