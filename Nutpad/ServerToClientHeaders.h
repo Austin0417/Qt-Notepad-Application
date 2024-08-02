@@ -5,7 +5,7 @@
 
 enum class ServerToClientHeaders
 {
-	SEND_ID = 1,
+	SEND_ID = 0,
 	SEND_TEXT,
 	SEND_CLIENT_COLOR,
 	SEND_ALL_CLIENT_COLORS,
@@ -13,6 +13,7 @@ enum class ServerToClientHeaders
 	SEND_SELECTION_DATA,
 	SERVER_REMOVE_SELECTION,
 	SERVER_REMOVE_CHAR,
-	SERVER_END = 9
+	CLIENT_END,
+	SERVER_END
 };
 

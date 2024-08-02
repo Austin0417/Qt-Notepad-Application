@@ -171,6 +171,13 @@ Server& Server::SetOnClientJoinCallback(const std::function<void(int)>& callback
 	return *this;
 }
 
+Server& Server::SetOnClientTerminatedCallback(const std::function<void(int)>& callback)
+{
+	on_client_terminated_ = callback;
+	return *this;
+}
+
+
 Server& Server::SetOnClientColorSetCallback(const std::function<void(int, QColor)>& callback)
 {
 	on_client_color_set_ = callback;
@@ -246,6 +253,12 @@ void Server::Start()
 				client->SetOnClientTerminatedCallback([this](int terminated_client_id)
 					{
 						// TODO Remove the ServerToClientHandle with the given id here
+						on_client_terminated_(terminated_client_id);
+						for (auto& client : clients_)
+						{
+							client->Write(ServerToClientHeaders::CLIENT_END, terminated_client_id, true);
+						}
+
 						auto removed_client_it = std::find_if(clients_.begin(), clients_.end(), [this, terminated_client_id](std::unique_ptr<ServerToClientHandle>& client)
 							{
 								return terminated_client_id == client->GetClientId();
@@ -255,6 +268,7 @@ void Server::Start()
 							clients_.erase(removed_client_it);
 							std::cout << "SERVER: closing server-to-client socket with id=" << terminated_client_id << "\n";
 						}
+
 					})
 					.SetOnClientCursorChangedCallback([this](ClientCursorPositionData cursor_data)
 						{

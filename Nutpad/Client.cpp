@@ -44,7 +44,8 @@ static ServerToClientHeaders GetMessageType(std::istream& is)
 Client::Client(const std::string& ip, short port) :
 	socket_(IOContextSingleton::GetClientIOContext()),
 	resolver_(IOContextSingleton::GetClientIOContext()),
-	Connection(ip, port)
+	Connection(ip, port),
+	is_connected_(false)
 
 {
 
@@ -64,6 +65,7 @@ void Client::Start()
 		{
 			if (!ec)
 			{
+				is_connected_ = true;
 				on_client_connect_success_();
 				std::cout << "CLIENT: successfully connected to server\n";
 				Read();
@@ -113,6 +115,14 @@ void Client::Read()
 					std::vector<ClientColorPacket> client_colors = GetAllClientColorsFromStream(is);
 					on_all_client_colors_received_(client_colors);
 					break;
+				}
+				case ServerToClientHeaders::CLIENT_END:
+				{
+					char client_id_buffer[3];
+					is.read(client_id_buffer, 2);
+					client_id_buffer[2] = '\0';
+
+					on_client_terminated_(std::atoi(client_id_buffer));
 				}
 				case ServerToClientHeaders::SERVER_END:
 				{
@@ -167,6 +177,13 @@ Client& Client::SetOnClientConnectSuccess(const std::function<void()>& callback)
 	on_client_connect_success_ = callback;
 	return *this;
 }
+
+Client& Client::SetOnClientTerminatedCallback(const std::function<void(int)>& callback)
+{
+	on_client_terminated_ = callback;
+	return *this;
+}
+
 
 Client& Client::SetOnClientColorReceivedCallback(const std::function<void(ClientColorPacket)>& callback)
 {
@@ -231,3 +248,4 @@ void Client::StopIOContext()
 {
 	IOContextSingleton::GetServerIOContext().stop();
 }
+

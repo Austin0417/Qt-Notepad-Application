@@ -114,6 +114,7 @@ private:
 	std::vector<std::unique_ptr<ServerToClientHandle>> clients_;
 	std::function<QString()> get_host_current_text_;
 	std::function<void(int)> on_client_join_;
+	std::function<void(int)> on_client_terminated_;
 	std::function<void(int, QColor)> on_client_color_set_;
 	std::function<void()> on_start_success_;
 	std::function<void(const ClientCursorPositionData&)> on_client_cursor_position_changed_;
@@ -131,6 +132,7 @@ public:
 	Server(const std::string& ip, short port);
 	Server& SetCurrentHostTextCallback(const std::function<QString()>& callback);
 	Server& SetOnClientJoinCallback(const std::function<void(int)>& callback);
+	Server& SetOnClientTerminatedCallback(const std::function<void(int)>& callback);
 	Server& SetOnClientColorSetCallback(const std::function<void(int, QColor)>& callback);
 	Server& SetOnStartSuccessCallback(const std::function<void()>& callback);
 	Server& SetOnClientCursorPositionChanged(const std::function<void(const ClientCursorPositionData&)>& callback);

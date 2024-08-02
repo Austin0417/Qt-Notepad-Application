@@ -80,6 +80,7 @@ public:
 	Nutpad(QWidget* parent = nullptr);
 	void keyPressEvent(QKeyEvent* event) override;
 	void keyReleaseEvent(QKeyEvent* event) override;
+	void closeEvent(QCloseEvent* event) override;
 	~Nutpad();
 
 signals:
