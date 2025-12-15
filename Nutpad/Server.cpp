@@ -3,10 +3,10 @@
 
 static ClientToServerHeaders GetMessageType(std::istream& is)
 {
-	char message_type;
-	is.read(&message_type, sizeof(char));
+	int message_type;
+	is.read((char*)&message_type, sizeof(message_type));
 
-	return static_cast<ClientToServerHeaders>(std::atoi(&message_type));
+	return static_cast<ClientToServerHeaders>(message_type);
 }
 
 void ServerToClientHandle::Read()
@@ -265,12 +265,6 @@ void Server::Start()
 				QColor new_client_color = GetRandomColor();
 				on_client_color_set_(next_client_id_, new_client_color);
 
-				// The new client hasn't been added to the vector of clients yet, this should be fine
-				for (auto& client : clients_)
-				{
-					client->Write(ServerToClientHeaders::SEND_CLIENT_COLOR, ClientColorPacket{ next_client_id_, new_client_color }, true);
-				}
-
 				client->SetOnClientTerminatedCallback([this](int terminated_client_id)
 					{
 						// TODO Remove the ServerToClientHandle with the given id here
@@ -295,13 +289,15 @@ void Server::Start()
 						{
 							on_client_text_received_(client_edit_text);
 
-							for (auto& client : clients_)
-							{
-								if (client->GetClientId() != client_edit_text.client_id_)
-								{
-									client->Write(ServerToClientHeaders::SERVER_UPDATE_TEXT, client_edit_text);
-								}
-							}
+							WriteAllClients(ServerToClientHeaders::SERVER_UPDATE_TEXT, client_edit_text);
+
+							//for (auto& client : clients_)
+							//{
+							//	if (client->GetClientId() != client_edit_text.client_id_)
+							//	{
+							//		client->Write(ServerToClientHeaders::SERVER_UPDATE_TEXT, client_edit_text);
+							//	}
+							//}
 						})
 					.SetOnClientCursorChangedCallback([this](ClientCursorPositionData cursor_data)
 						{
@@ -350,11 +346,11 @@ void Server::Start()
 								}
 							}
 						});
+
 				clients_.push_back(std::move(client));
 				on_client_join_(next_client_id_);
 
 				// Send the client's assigned id to the client
-				//clients_.back()->Write(ServerToClientHeaders::SEND_ID, next_client_id_, true);
 				clients_.back()->Write(ServerToClientHeaders::SEND_ID, next_client_id_);
 				next_client_id_++;
 

@@ -621,7 +621,9 @@ void Nutpad::BindActionsToMenus()
 	connect(this, &Nutpad::UpdateText, this, [this](const ClientEditText& client_edit_text)
 		{
 			bool was_blocked = notepad_text_->blockSignals(true);
+			QTextCursor cursor = notepad_text_->textCursor();
 			notepad_text_->setText(client_edit_text.text_);
+			notepad_text_->setTextCursor(cursor);
 			notepad_text_->blockSignals(was_blocked);
 		});
 }

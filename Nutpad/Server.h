@@ -116,8 +116,6 @@ public:
 class Server : public Connection
 {
 private:
-	//std::string host_ip_address_;
-	//short host_port_;
 	bool first_startup_ = true;
 	tcp::acceptor acceptor_;
 

@@ -46,7 +46,9 @@ public:
 	{
 		std::ostream os(&write_buffer_);
 
-		os << static_cast<int>(header) << data << '\0';
+		int header_int = static_cast<int>(header);
+		os.write((const char*)&header_int, sizeof(header_int));
+		os << data << '\0';
 
 		boost::asio::async_write(socket_, write_buffer_, [this](boost::system::error_code ec, std::size_t length)
 			{

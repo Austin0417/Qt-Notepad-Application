@@ -164,7 +164,7 @@ void NutpadTextEdit::paintEvent(QPaintEvent* event)
 	QPainter painter(viewport());
 
 	QPen pen;
-	pen.setWidth(1);
+	pen.setWidth(3);
 
 	for (const auto& entry : client_data_mapping_)
 	{
