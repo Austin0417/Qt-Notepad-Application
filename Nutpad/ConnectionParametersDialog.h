@@ -4,6 +4,7 @@
 #include <QKeyEvent>
 #include <QHostAddress>
 #include <QNetworkInterface>
+#include <iostream>
 #include <functional>
 
 class PortNumberLineEdit : public QLineEdit
@@ -39,7 +40,7 @@ private:
 	std::function<void(const QString&, short)> on_confirm_;
 	std::unique_ptr<PortNumberLineEdit> port_line_edit_;
 public:
-	ConnectionParametersDialog(const std::function<void(const QString&, short)>& callback, QWidget* parent = nullptr);
+	ConnectionParametersDialog(const std::function<void(const QString&, unsigned short)>& callback, QWidget* parent = nullptr);
 	void keyPressEvent(QKeyEvent* event) override;
 };
 

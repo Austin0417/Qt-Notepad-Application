@@ -82,6 +82,13 @@ void ServerToClientHandle::Read()
 					on_removed_selection_(removed_selection_data);
 					break;
 				}
+				case ClientToServerHeaders::CLIENT_SEND_TEXT:
+				{
+					ClientEditText client_edit_text = GetClientEditTextFromStream(is);
+					std::cout << "Server - Client Send Text received: " << client_edit_text.text_.toStdString() << "\n";;
+					on_client_text_received_(client_edit_text);
+					break;
+				}
 				}
 				read_buffer_.consume(length);
 				Read();
@@ -111,6 +118,13 @@ void ServerToClientHandle::LaunchMessageQueue()
 	}
 }
 
+
+ServerToClientHandle& ServerToClientHandle::SetOnClientTextReceivedCallback(const std::function<void(ClientEditText)>& callback)
+{
+	on_client_text_received_ = callback;
+
+	return *this;
+}
 
 ServerToClientHandle& ServerToClientHandle::SetOnClientTerminatedCallback(const std::function<void(int)>& callback)
 {
@@ -156,6 +170,7 @@ Server::Server(const std::string& ip, short port) :
 	acceptor_(IOContextSingleton::GetServerIOContext(), tcp::endpoint(boost::asio::ip::make_address(ip_address_), port_number_)),
 	num_clients_acknowledged_termination_(0)
 {
+	std::cout << "Hosting server at IP: " << ip << ", port: " << port << "\n";
 }
 
 
@@ -188,6 +203,13 @@ Server& Server::SetOnClientColorSetCallback(const std::function<void(int, QColor
 Server& Server::SetOnStartSuccessCallback(const std::function<void()>& callback)
 {
 	on_start_success_ = callback;
+	return *this;
+}
+
+Server& Server::SetOnClientTextReceivedCallback(const std::function<void(ClientEditText)>& callback)
+{
+	on_client_text_received_ = callback;
+
 	return *this;
 }
 
@@ -234,7 +256,6 @@ void Server::Start()
 		{
 			if (!ec)
 			{
-				// TODO Synchronized client colors approach
 				// Upon a client joining, the server will generate the color for the client, then send this color to the client so that they can store this color on their client side
 				// At the same time, send the generated color for the new client, along with the new client's id to the rest of the clients, so that they have the new client's color as well
 
@@ -270,6 +291,18 @@ void Server::Start()
 						}
 
 					})
+					.SetOnClientTextReceivedCallback([this](ClientEditText client_edit_text)
+						{
+							on_client_text_received_(client_edit_text);
+
+							for (auto& client : clients_)
+							{
+								if (client->GetClientId() != client_edit_text.client_id_)
+								{
+									client->Write(ServerToClientHeaders::SERVER_UPDATE_TEXT, client_edit_text);
+								}
+							}
+						})
 					.SetOnClientCursorChangedCallback([this](ClientCursorPositionData cursor_data)
 						{
 							// Relay the cursor position index of this particular client to the rest of the clients
@@ -283,63 +316,63 @@ void Server::Start()
 								}
 							}
 						})
-						.SetOnClientCharacterRemovedCallback([this](ClientRemovedCharacterData removed_char_data)
+					.SetOnClientCharacterRemovedCallback([this](ClientRemovedCharacterData removed_char_data)
+						{
+							on_client_character_removed_(removed_char_data);
+							// Send the client's removed character index to the rest of the clients
+							for (std::unique_ptr<ServerToClientHandle>& client : clients_)
 							{
-								on_client_character_removed_(removed_char_data);
-								// Send the client's removed character index to the rest of the clients
-								for (std::unique_ptr<ServerToClientHandle>& client : clients_)
+								if (client->GetClientId() != removed_char_data.client_id_)
 								{
-									if (client->GetClientId() != removed_char_data.client_id_)
-									{
-										client->Write(ServerToClientHeaders::SERVER_REMOVE_CHAR, removed_char_data, true);
-									}
+									client->Write(ServerToClientHeaders::SERVER_REMOVE_CHAR, removed_char_data, true);
 								}
-							})
-							.SetClientSelectionDataCallback([this](ClientSelectionData selection_data)
+							}
+						})
+					.SetClientSelectionDataCallback([this](ClientSelectionData selection_data)
+						{
+							on_client_selection_(selection_data);
+							for (auto& client : clients_)
+							{
+								if (client->GetClientId() != selection_data.client_id_)
 								{
-									on_client_selection_(selection_data);
-									for (auto& client : clients_)
-									{
-										if (client->GetClientId() != selection_data.client_id_)
-										{
-											client->Write(ServerToClientHeaders::SEND_SELECTION_DATA, selection_data);
-										}
-									}
-								})
-								.SetOnClientRemovedSelectionDataCallback([this](ClientRemovedSelectionData removed_selection)
-									{
-										on_client_selection_removed_(removed_selection);
-										for (auto& client : clients_)
-										{
-											if (client->GetClientId() != removed_selection.client_id_)
-											{
-												client->Write(ServerToClientHeaders::SERVER_REMOVE_SELECTION, removed_selection, true);
-											}
-										}
-									});
-								clients_.push_back(std::move(client));
-								on_client_join_(next_client_id_);
+									client->Write(ServerToClientHeaders::SEND_SELECTION_DATA, selection_data);
+								}
+							}
+						})
+					.SetOnClientRemovedSelectionDataCallback([this](ClientRemovedSelectionData removed_selection)
+						{
+							on_client_selection_removed_(removed_selection);
+							for (auto& client : clients_)
+							{
+								if (client->GetClientId() != removed_selection.client_id_)
+								{
+									client->Write(ServerToClientHeaders::SERVER_REMOVE_SELECTION, removed_selection, true);
+								}
+							}
+						});
+				clients_.push_back(std::move(client));
+				on_client_join_(next_client_id_);
 
-								// Send the client's assigned id to the client
-								//clients_.back()->Write(ServerToClientHeaders::SEND_ID, next_client_id_, true);
-								clients_.back()->Write(ServerToClientHeaders::SEND_ID, next_client_id_);
-								next_client_id_++;
+				// Send the client's assigned id to the client
+				//clients_.back()->Write(ServerToClientHeaders::SEND_ID, next_client_id_, true);
+				clients_.back()->Write(ServerToClientHeaders::SEND_ID, next_client_id_);
+				next_client_id_++;
 
-								// TODO Needs acknowledgement from the client that it has successfully processed the previous message before the server sends the next message
-								// TODO IDEA: store messages from the server in a queue, and after receiving an acknowledgement from the client, pop a message from the queue and send it
-								// Send the current text of the server/host's notepad to the client
+				// TODO Needs acknowledgement from the client that it has successfully processed the previous message before the server sends the next message
+				// TODO IDEA: store messages from the server in a queue, and after receiving an acknowledgement from the client, pop a message from the queue and send it
+				// Send the current text of the server/host's notepad to the client
 
-								clients_.back()->Write(ServerToClientHeaders::SEND_TEXT, get_host_current_text_().toStdString());
+				clients_.back()->Write(ServerToClientHeaders::SEND_TEXT, get_host_current_text_().toStdString());
 
-								// TODO Here, we also send the newest client the colors of the rest of the clients
-								std::vector<ClientColorPacket> client_colors = get_client_colors_();
-								std::cout << "SERVER: sending client colors=" << client_colors << "\n";
+				// TODO Here, we also send the newest client the colors of the rest of the clients
+				std::vector<ClientColorPacket> client_colors = get_client_colors_();
+				std::cout << "SERVER: sending client colors=" << client_colors << "\n";
 
-								clients_.back()->Write(ServerToClientHeaders::SEND_ALL_CLIENT_COLORS, client_colors);
+				clients_.back()->Write(ServerToClientHeaders::SEND_ALL_CLIENT_COLORS, client_colors);
 
-								clients_.back()->LaunchMessageQueue();
+				clients_.back()->LaunchMessageQueue();
 
-								Start();
+				Start();
 			}
 			else
 			{

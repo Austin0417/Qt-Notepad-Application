@@ -17,6 +17,10 @@ ClientSelectionData GetClientSelectionDataFromStream(std::istream& is);
 
 ClientRemovedSelectionData GetClientRemovedSelectionDataFromStream(std::istream& is);
 
+ClientEditText GetClientEditTextFromStream(std::istream& is);
+
+std::ostream& operator<<(std::ostream& os, const ClientEditText& data);
+
 std::ostream& operator<<(std::ostream& os, const ClientCursorPositionData& data);
 
 std::ostream& operator<<(std::ostream& os, const ClientSelectionData& data);

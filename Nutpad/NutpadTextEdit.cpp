@@ -34,6 +34,13 @@ NutpadTextEdit::NutpadTextEdit(QWidget* parent) :
 		{
 			QToolTip::showText(this->mapToGlobal(pos), "Client " + QString::number(client_id), nullptr, QRect{}, 2000);
 		});
+
+	connect(this, &QTextEdit::textChanged, this, [this]()
+		{
+			QString notepad_text = toPlainText();
+
+			emit this->OnTextChanged(notepad_text, notepad_text.length() + 1);
+		});
 }
 
 void NutpadTextEdit::SetUndoRequestCallback(const std::function<void()>& callback)
@@ -48,7 +55,6 @@ void NutpadTextEdit::mousePressEvent(QMouseEvent* event)
 	if (event->button() == Qt::LeftButton)
 	{
 		QTextCursor text_cursor = cursorForPosition(event->pos());
-		qDebug() << "Mouse left click on text edit at pos=" << QCursor::pos() << ". Current index in string=" << text_cursor.position();
 		current_index_of_mouse_cursor_ = text_cursor.position();
 		emit OnMouseLeftClick(text_cursor.position());
 
@@ -75,7 +81,6 @@ void NutpadTextEdit::mouseMoveEvent(QMouseEvent* event)
 {
 	QTextEdit::mouseMoveEvent(event);
 
-	qDebug() << "Text edit mouse move at: " << event->position();
 	client_cursor_thread_.SearchPoint(event->position().toPoint());
 
 }

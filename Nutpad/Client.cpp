@@ -33,12 +33,9 @@ static char* ParseTextData(std::istream& is)
 
 static ServerToClientHeaders GetMessageType(std::istream& is)
 {
-	char message_type;
-	is.read(&message_type, sizeof(char));
-
-	int int_message_type = std::atoi(&message_type);
-
-	return static_cast<ServerToClientHeaders>(int_message_type);
+	int message_type;
+	is.read((char*)&message_type, sizeof(message_type));
+	return static_cast<ServerToClientHeaders>(message_type);
 }
 
 Client::Client(const std::string& ip, short port) :
@@ -85,7 +82,6 @@ void Client::Read()
 			{
 				std::istream is(&read_buffer_);
 
-
 				switch (GetMessageType(is))
 				{
 				case ServerToClientHeaders::SEND_ID:
@@ -101,6 +97,13 @@ void Client::Read()
 					char* contents_buffer = ParseTextData(is);
 					std::cout << "CLIENT: received text content from server\n" << contents_buffer;
 					on_received_text_from_host_(contents_buffer);
+					break;
+				}
+				case ServerToClientHeaders::SERVER_UPDATE_TEXT:
+				{
+					ClientEditText client_edit_text = GetClientEditTextFromStream(is);
+					std::cout << "Client - Server Update text received\n";
+					on_client_text_received_(client_edit_text);
 					break;
 				}
 				case ServerToClientHeaders::SEND_CLIENT_COLOR:
@@ -169,6 +172,13 @@ void Client::Read()
 Client& Client::SetOnHostTextReceived(const std::function<void(char*)>& callback)
 {
 	on_received_text_from_host_ = callback;
+	return *this;
+}
+
+Client& Client::SetOnClientTextReceived(const std::function<void(ClientEditText)>& callback)
+{
+	on_client_text_received_ = callback;
+
 	return *this;
 }
 

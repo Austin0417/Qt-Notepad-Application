@@ -16,7 +16,7 @@ static QString GetHostIpAddress()
 }
 
 
-ConnectionParametersDialog::ConnectionParametersDialog(const std::function<void(const QString&, short)>& callback, QWidget* parent) :
+ConnectionParametersDialog::ConnectionParametersDialog(const std::function<void(const QString&, unsigned short)>& callback, QWidget* parent) :
 	on_confirm_(callback),
 	QDialog(parent)
 {
@@ -31,8 +31,7 @@ ConnectionParametersDialog::ConnectionParametersDialog(const std::function<void(
 
 	connect(ui.confirm_btn, &QPushButton::clicked, this, [this]()
 		{
-
-			on_confirm_(ui.ip_address_line_edit->text(), port_line_edit_->text().toShort());
+			on_confirm_(ui.ip_address_line_edit->text(), port_line_edit_->text().toUShort());
 			this->close();
 		});
 }

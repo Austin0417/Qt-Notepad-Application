@@ -85,6 +85,7 @@ public:
 	const std::unordered_map<int, ClientTextData>& GetClientDataMapping() const;
 	std::unordered_map<int, ClientTextData>& GetClientDataMapping();
 signals:
+	void OnTextChanged(QString text, std::size_t text_len);
 	void OnMouseLeftClick(int index_in_text_string);
 	void OnCharacterRemoved(int index_of_removed_char);
 	void OnSelectionRemoved(int start_index, int end_index);

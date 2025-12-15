@@ -138,6 +138,39 @@ ClientRemovedSelectionData GetClientRemovedSelectionDataFromStream(std::istream&
 	return ClientRemovedSelectionData(std::atoi(char_buffer_client_id), std::atoi(char_buffer_start_index), std::atoi(char_buffer_end_index));
 }
 
+ClientEditText GetClientEditTextFromStream(std::istream& is)
+{
+	// First 4 bytes hold client id.
+	// Next 8 bytes hold length of text (number of characters).
+	// Rest of bytes contain text data.
+	int client_id;
+	std::size_t text_length;
+	QString text;
+
+	is.read((char*)&client_id, sizeof(client_id));
+	is.read((char*)&text_length, sizeof(text_length));
+
+	char* tmp = new char[text_length + 1];
+	is.read(tmp, text_length + 1);
+	text = tmp;
+
+	delete[] tmp;
+
+	return ClientEditText(client_id, text_length, text);
+}
+
+
+std::ostream& operator<<(std::ostream& os, const ClientEditText& data)
+{
+	int client_id = data.client_id_;
+	std::size_t text_length = data.text_length_;
+
+	os.write((const char*)&client_id, sizeof(client_id));
+	os.write((const char*)&text_length, sizeof(text_length));
+	os.write(data.text_.toUtf8().constData(), text_length);
+
+	return os;
+}
 
 std::ostream& operator<<(std::ostream& os, const ClientCursorPositionData& data)
 {

@@ -50,6 +50,7 @@ private:
 	int client_id_;
 
 	std::function<void(int)> on_client_terminated_;
+	std::function<void(ClientEditText)> on_client_text_received_;
 	std::function<void(ClientCursorPositionData)> on_client_cursor_changed_;
 	std::function<void(ClientRemovedCharacterData)> on_client_character_removed_;
 	std::function<void(ClientSelectionData)> on_selection_;
@@ -67,8 +68,15 @@ public:
 	template<typename T>
 	void Write(ServerToClientHeaders header, const T& data, bool should_bypass_queue = false)
 	{
+		if (header == ServerToClientHeaders::SERVER_UPDATE_TEXT)
+		{
+			std::cout << "Server - Sending server update text";
+		}
+
 		std::ostream os(&write_buffer_);
-		os << static_cast<int>(header) << data << '\0';
+		int header_int = static_cast<int>(header);
+		os.write((const char*)&header_int, sizeof(header_int));
+		os << data << '\0';
 
 		if (should_bypass_queue)
 		{
@@ -95,6 +103,8 @@ public:
 
 		std::size_t num_bytes_written = boost::asio::write(socket_, write_buffer_);
 	}
+
+	ServerToClientHandle& SetOnClientTextReceivedCallback(const std::function<void(ClientEditText)>& callback);
 	ServerToClientHandle& SetOnClientTerminatedCallback(const std::function<void(int)>& callback);
 	ServerToClientHandle& SetOnClientCursorChangedCallback(const std::function<void(ClientCursorPositionData)>& callback);
 	ServerToClientHandle& SetOnClientCharacterRemovedCallback(const std::function<void(ClientRemovedCharacterData)>& callback);
@@ -117,6 +127,7 @@ private:
 	std::function<void(int)> on_client_terminated_;
 	std::function<void(int, QColor)> on_client_color_set_;
 	std::function<void()> on_start_success_;
+	std::function<void(ClientEditText)> on_client_text_received_;
 	std::function<void(const ClientCursorPositionData&)> on_client_cursor_position_changed_;
 	std::function<void(ClientSelectionData)> on_client_selection_;
 	std::function<void(ClientRemovedCharacterData)> on_client_character_removed_;
@@ -135,6 +146,7 @@ public:
 	Server& SetOnClientTerminatedCallback(const std::function<void(int)>& callback);
 	Server& SetOnClientColorSetCallback(const std::function<void(int, QColor)>& callback);
 	Server& SetOnStartSuccessCallback(const std::function<void()>& callback);
+	Server& SetOnClientTextReceivedCallback(const std::function<void(ClientEditText)>& callback);
 	Server& SetOnClientCursorPositionChanged(const std::function<void(const ClientCursorPositionData&)>& callback);
 	Server& SetOnClientSelectionCallback(const std::function<void(ClientSelectionData)>& callback);
 	Server& SetOnClientCharacterRemoved(const std::function<void(ClientRemovedCharacterData)>& callback);

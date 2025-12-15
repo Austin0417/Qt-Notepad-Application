@@ -1,7 +1,16 @@
 #pragma once
+#include <qstring.h>
 
 // When sending a structure over the network, the first character/byte will always be a header indicating the type of data the message holds
 // Next two characters will hold id of the client from which the message originated from
+
+struct ClientEditText
+{
+	ClientEditText(int client_id, std::size_t text_length, const QString& text) : client_id_(client_id), text_length_(text_length), text_(text) {}
+	int client_id_;
+	std::size_t text_length_;
+	QString text_;
+};
 
 
 struct ClientCursorPositionData
